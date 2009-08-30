@@ -1943,6 +1943,58 @@ new Test.Unit.Runner({
     this.assertEqual(100, $('dimensions-table').getDimensions().height, 'TABLE height');
     this.assertEqual(200, $('dimensions-table').getDimensions().width,  'TABLE height');
     $('dimensions-table').show();
+    
+    (function(global) {
+      var toFloat = function(value) {
+        return parseFloat(value) || 0;
+      };
+      
+      var margin = {}, 
+      border = {}, 
+      padding = {}, 
+      el = $('style_test_dimensions_container'), 
+      clientWidth = el.clientWidth;
+
+      margin.left = toFloat(el.getStyle('marginLeft'));
+      margin.right = toFloat(el.getStyle('marginRight'));
+      margin.width = margin.left + margin.right;      
+      border.left = toFloat(el.getStyle('borderLeftWidth'));
+      border.right = toFloat(el.getStyle('borderRightWidth'));
+      border.width = border.left + border.right;
+      padding.left = toFloat(el.getStyle('paddingLeft'));
+      padding.right = toFloat(el.getStyle('paddingRight'));
+      padding.width = padding.left + padding.right;
+      
+      // Content + Padding + Border (Visual Preset) [Default]
+      var dimensions = el.getDimensions();
+      global.assertEqual(clientWidth + border.width, dimensions.width);
+      global.assertEqual(56, dimensions.height);
+      
+      // Content + Padding + Border + Margin
+      var dimensions = el.getDimensions('box');
+      global.assertEqual(clientWidth + border.width + margin.width, dimensions.width);
+      global.assertEqual(76, dimensions.height);
+      
+      // Content + Padding
+      var dimensions = el.getDimensions('client');
+      global.assertEqual(clientWidth, dimensions.width);
+      global.assertEqual(50, dimensions.height);
+      
+      // Content
+      var dimensions = el.getDimensions('content');
+      global.assertEqual(clientWidth - padding.width, dimensions.width);
+      global.assertEqual(30, dimensions.height);
+      
+      // Content + Padding + Border + Margin (Box Preset)
+      var dimensions = el.getDimensions({ margin: true });
+      global.assertEqual(clientWidth + border.width + margin.width, dimensions.width);
+      global.assertEqual(76, dimensions.height);
+      
+      // Border + Content
+      var dimensions = el.getDimensions({ padding: false });
+      global.assertEqual(clientWidth + border.width - padding.width, dimensions.width);
+      global.assertEqual(36, dimensions.height);      
+    })(this);
   },
 
   'testElementClonePosition': function() {

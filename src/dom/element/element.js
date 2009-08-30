@@ -361,9 +361,59 @@
       return Fuse.String($(element).innerHTML).blank();
     };
 
-    methods.getDimensions = function getDimensions(element) {
-      return { 'width': Element.getWidth(element), 'height': Element.getHeight(element) };
-    };
+    methods.getDimensions = (function() {
+      var presets = {
+        'box': { 'margin': 1, 'border': 1, 'padding': 1 },
+        'visual': { 'margin': 0, 'border': 1, 'padding': 1 },
+        'client': { 'margin': 0, 'border': 0, 'padding': 1 },
+        'content': { 'margin': 0, 'border': 0, 'padding': 0 }
+      };
+    
+      var toFloat = parseFloat;
+      
+      function getDimensions(element, options) {
+        if (isString(options)) options = presets[options];
+        else options = _extend(clone(presets.visual), options || {});
+        
+        var results = {}, margin = {}, border = {}, padding = {};
+    
+        // First get our offset(Width/Height) (visual)        
+        results.width = Element.getWidth(element);
+        results.height = Element.getHeight(element);
+        
+        if (options.margin) {
+          margin.top = toFloat(Element.getStyle(element, 'marginTop')) || 0;
+          margin.right = toFloat(Element.getStyle(element, 'marginRight')) || 0;
+          margin.bottom = toFloat(Element.getStyle(element, 'marginBottom')) || 0;
+          margin.left = toFloat(Element.getStyle(element, 'marginLeft')) || 0;
+          
+          results.width += margin.left + margin.right;
+          results.height += margin.top + margin.bottom;
+        }
+    
+        if (!options.border) {
+          border.top = toFloat(Element.getStyle(element, 'borderTopWidth')) || 0;
+          border.right = toFloat(Element.getStyle(element, 'borderRightWidth')) || 0;
+          border.bottom = toFloat(Element.getStyle(element, 'borderBottomWidth')) || 0;
+          border.left = toFloat(Element.getStyle(element, 'borderLeftWidth')) || 0;
+          
+          results.width -= border.left + border.right;
+          results.height -= border.top + border.bottom;        
+        }
+        
+        if (!options.padding) {
+          padding.top = toFloat(Element.getStyle(element, 'paddingTop')) || 0;
+          padding.right = toFloat(Element.getStyle(element, 'paddingRight')) || 0;
+          padding.bottom = toFloat(Element.getStyle(element, 'paddingBottom')) || 0;
+          padding.left = toFloat(Element.getStyle(element, 'paddingLeft')) || 0;
+          
+          results.width -= padding.left + padding.right;
+          results.height -= padding.top + padding.bottom;         
+        }
+        return results;
+      };      
+      return getDimensions;      
+    })();
 
     methods.identify = function identify(element) {
       // use readAttribute to avoid issues with form elements and
@@ -718,7 +768,7 @@
       return function(element) {
         element = $(element);
 
-        // offsetHidth/offsetWidth properties return 0 on elements
+        // offsetHeight/offsetWidth properties return 0 on elements
         // with display:none, so show the element temporarily
         var result;
         if (!Element.isVisible(element)) {
