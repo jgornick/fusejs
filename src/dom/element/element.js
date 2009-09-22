@@ -245,7 +245,11 @@
   /*--------------------------------------------------------------------------*/
 
   Fuse.Dom.getFragmentFromString = (function() {
-    var FROM_STRING_PARENT_WRAPPERS = (function() {
+
+    var ELEMENT_TABLE_INNERHTML_INSERTS_TBODY =
+      Bug('ELEMENT_TABLE_INNERHTML_INSERTS_TBODY'),
+
+    FROM_STRING_PARENT_WRAPPERS = (function() {
       var T = {
         'COLGROUP': ['<table><colgroup>',      '<\/colgroup><tbody><\/tbody><\/table>', 2],
         'SELECT':   ['<select>',               '<\/select>',                            1],
@@ -386,10 +390,8 @@
   /*--------------------------------------------------------------------------*/
 
   (function(plugin) {
-    var ELEMENT_TABLE_INNERHTML_INSERTS_TBODY =
-      Bug('ELEMENT_TABLE_INNERHTML_INSERTS_TBODY'),
 
-    ELEMENT_INSERT_METHODS = {
+    var ELEMENT_INSERT_METHODS = {
       'before': function(element, node) {
         element.parentNode &&
           element.parentNode.insertBefore(node, element);
