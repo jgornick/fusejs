@@ -1,29 +1,18 @@
   /*----------------------------- SELECTOR: ACME -----------------------------*/
 
-  (function(Selector) {
+  (function(Selector, NodeList) {
     Selector.match = function match(element, selector) {
       var item, i = 0,
-       results = acme.query(String(selector || ''), getDocument(element));
+       results = acme.query(String(selector || ''), Fuse.getDocument(element));
       while (item = results[i++])
         if (item === element) return true;
       return false;
     };
 
-    Selector.select = (function() {
-      var select = function select(selector, context) {
-        return toList(acme.query(String(selector || ''), context || Fuse._doc))
-          .map(Element.extend);
-      };
+    Selector.select = function select(selector, context) {
+      return toList(acme.query(String(selector || ''),
+        context && context.raw || context || Fuse._doc));
+    };
 
-      if (Feature('ELEMENT_EXTENSIONS'))
-        select = function select(selector, context) {
-          return toList(acme.query(String(selector || ''), context || Fuse._doc));
-        };
-
-      var toList = Fuse.List.fromNodeList;
-      return select;
-    })();
-
-    // prevent JScript bug with named function expressions
-    var match = null;
-  })(Fuse.Dom.Selector);
+    var toList = NodeList.fromNodeList, match = null, select = null;
+  })(Fuse.Dom.Selector, Fuse.Dom.NodeList);

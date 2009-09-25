@@ -7,7 +7,7 @@
           // this._super() equivalent
           Fuse.Timer.call(this, callback, interval, options);
 
-          this.element = $(element);
+          this.element = Fuse.get(element);
           this.lastValue = this.getValue();
           this.start();
         }
@@ -40,7 +40,7 @@
       })(),
 
       'getValue': (function() {
-        function getValue() { return Field.getValue(this.element) }
+        function getValue() { return Field.getValue(this.element); }
         return getValue;
       })()
     });
@@ -57,7 +57,7 @@
       })(),
 
       'getValue': (function() {
-        function getValue() { return Form.serialize(this.element) }
+        function getValue() { return Form.serialize(this.element); }
         return getValue;
       })()
     });

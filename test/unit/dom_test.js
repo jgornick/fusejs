@@ -59,8 +59,8 @@ new Test.Unit.Runner({
       'Iframe failed. You MUST run the tests from Rake and not the local file system.');
   },
 
-  'testElementAddMethods': function() {
-    Element.addMethods({ 'cheeseCake': function() { return 'Cheese cake' } });
+  'testElementExtend': function() {
+    Fuse.Dom.Element.extend({ 'cheeseCake': function() { return 'Cheese cake' } });
     this.assertRespondsTo('cheeseCake', new Element('div'));
 
     // Additions to HTMLElement.prototype will be ignored if
@@ -68,15 +68,12 @@ new Test.Unit.Runner({
     // same name. Extending elements by tagName will get around the issue.
     if (!Fuse.Object.hasKey(new Element('div'), 'toString')) {
 
-      Element.addMethods('DIV', { 'toString': Element.Methods.inspect });
+      Fuse.Dom.Element.extend('DIV', { 'toString': Fuse.Dom.Element.plugin.inspect });
       this.assertEqual('<div id="testdiv">', $('testdiv').toString(),
         'Failed to extend element with a toString method.');
 
       // remove toString addition
-      if (Fuse.Env.Feature('ELEMENT_SPECIFIC_EXTENSIONS'))
-        delete HTMLDivElement.prototype.toString;
-      delete Element.Methods.ByTag.DIV.toString;
-      Element.addMethods();
+      delete Fuse.Dom.DivElement.plugin.toString;
     }
   },
 
@@ -446,9 +443,6 @@ new Test.Unit.Runner({
     this.assert(!$('test-hidden').isVisible(),
       $('test-hidden').inspect());
 
-    this.assert(!$('test-hidden-by-size').isVisible(),
-      $('test-hidden-by-size').inspect());
-
     this.assert(!$('test-nested-hidden-visible').isVisible(),
       $('test-nested-hidden-visible').inspect());
 
@@ -458,11 +452,14 @@ new Test.Unit.Runner({
     this.assert(!(new Element('div')).isVisible(),
       'element fragment');
 
-    this.assert(!$('dimensions-tr').hide().isVisible(),
-      'hidden TR element');
-    $('dimensions-tr').show();
+    $('dimensions-tr').hide();
 
+    this.assert(!$('dimensions-tr').isVisible(),
+      'hidden TR element');
+
+    $('dimensions-tr').show();
     $('dimensions-table').hide();
+
     this.assert(!$('dimensions-tbody').isVisible(),
       'non-hidden TBODY element inside hidden TABLE');
 
@@ -473,6 +470,11 @@ new Test.Unit.Runner({
       'non-hidden TD element inside hidden TABLE');
 
     $('dimensions-table').show();
+
+    // IE6 will make the min-height 16px instead of 0px
+    this.assertEqual(!!$('test-hidden-by-size').offsetHeight,
+      $('test-hidden-by-size').isVisible(),
+      $('test-hidden-by-size').inspect());
   },
 
   'testElementToggle': function(){
@@ -969,7 +971,7 @@ new Test.Unit.Runner({
     dummy.innerHTML = Fuse.String.times('<div></div>', 3);
     this.assertRespondsTo('show', dummy.down().siblings()[0]);
   },
-  
+
   'testElementSiblingsWithSelector': function() {
     var results = $('intended').siblings('p');
 
@@ -1023,7 +1025,7 @@ new Test.Unit.Runner({
     // Test INPUT elements because Element#down calls Element#select
     var input = $$('input')[0];
     this.assertNothingRaised(function(){ input.down('span') });
-    this.assertUndefined(input.down('span'));
+    this.assertNull(input.down('span'));
   },
 
   'testElementPrevious': function() {
@@ -1059,20 +1061,6 @@ new Test.Unit.Runner({
     this.assertRespondsTo('show', dummy.down().next());
   },
 
-  'testElementInspect': function() {
-    this.assertEqual('<ul id="navigation_test">',
-      $('navigation_test').inspect(),
-      'element with id only');
-
-    this.assertEqual('<li class="first">',
-      $('navigation_test').down().inspect(),
-      'element with className only');
-
-    this.assertEqual('<em>',
-      $('navigation_test').down(1).inspect(),
-      'element with no className or id');
-  },
-
   'testElementMakeClipping': function() {
     var chained = new Element('div');
 
@@ -1091,16 +1079,19 @@ new Test.Unit.Runner({
       element.makeClipping();
       this.assertEqual('hidden', element.getStyle('overflow'));
 
-      element.undoClipping();
-      this.assertEqual(overflowValue, element.getStyle('overflow'));
+      // throw if overflow=hidden to begin with because we can't makeClipping
+      // on an element that is already clipped
+      if (overflowValue === 'hidden') {
+        this.assertRaise('Error', function() { element.undoClipping() },
+          'Should have thrown an error because makeClipping was not performed');
+      } else {
+        element.undoClipping();
+        this.assertEqual(overflowValue, element.getStyle('overflow'));
+      }
     }, this);
   },
 
   'testElementExtend': function() {
-    // add dummy simulated method
-    Element.Methods.Simulated.simulatedMethod = Fuse.K;
-    Element.addMethods();
-
     var element = $('element_extend_test');
     this.assertRespondsTo('show', element);
 
@@ -1124,10 +1115,6 @@ new Test.Unit.Runner({
       // test if elements are extended
       this.assertRespondsTo('show', element,
         nodeName + ' failed to be extended.');
-
-      // test if elements are extended with simulated methods
-      this.assertRespondsTo('simulatedMethod', element,
-        nodeName + ' failed to to be extended with simulated methods.');
     }, this);
 
     // ensure text nodes don't get extended
@@ -1141,12 +1128,6 @@ new Test.Unit.Runner({
     var xmlDoc = (new DOMParser()).parseFromString('<note><to>Sam</to></note>', 'text/xml');
     Element.extend(xmlDoc.firstChild);
     this.assertUndefined(xmlDoc.firstChild._extendedByFuse);
-
-    // remove dummy simulated method
-    delete Element.Methods.Simulated.simulatedMethod;
-    var proto = (window.HTMLElement || window.Element).prototype;
-    if (proto) delete proto.simulatedMethod;
-    Element.addMethods();
   },
 
   'testElementExtendReextendsDiscardedNodes': function() {
@@ -1157,10 +1138,10 @@ new Test.Unit.Runner({
   },
 
   'testExtendingAfterAddMethods': function() {
-    var span = new Element('span');
-    Element.addMethods({ 'testMethod': Fuse.K });
+    var span = Fuse.Dom.Element('span');
+    Fuse.Dom.Element.extend({ 'testMethod': Fuse.K });
 
-    this.assertRespondsTo('testMethod', Element.extend(span));
+    this.assertRespondsTo('testMethod', Fuse.Dom.Element(span));
   },
 
   'testElementCleanWhitespace': function() {
@@ -1271,7 +1252,7 @@ new Test.Unit.Runner({
     this.assertEqual('-1px', $('style_test_3').style.left);
     this.assertEqual('2px',  $('style_test_3').style.marginTop);
     this.assertEqual('none', $('style_test_3').getStyle('float'));
-    
+
     $('style_test_3').setStyle({ 'float': 'left' });
     this.assertEqual('left', $('style_test_3').getStyle('float'));
 
@@ -1363,6 +1344,7 @@ new Test.Unit.Runner({
     this.assertNull(Element.getStyle('style_test_1', 'width'),
       'elements that are hidden should return null on getStyle("width")');
 
+    // show element so browsers like Opera/Safari can compute the styles
     $('style_test_1').show();
 
     // from id rule
@@ -1378,7 +1360,7 @@ new Test.Unit.Runner({
     this.assertEqual($('style_test_2').offsetWidth+'px',
       Element.getStyle('style_test_2','width'));
 
-    this.assertEqual('static',Element.getStyle('style_test_1','position'));
+    this.assertEqual('static', Element.getStyle('style_test_1','position'));
 
     // from style
     this.assertEqual('11px',
@@ -1415,7 +1397,7 @@ new Test.Unit.Runner({
     $('op3').setStyle({ 'opacity': 0 });
     this.assertEqual(0, $('op3').getStyle('opacity'));
 
-    if (navigator.appVersion.match(/MSIE/)) {
+    if (Fuse.Env.IE) {
       this.assertEqual('alpha(opacity=30)', $('op1').getStyle('filter'));
       this.assertEqual('progid:DXImageTransform.Microsoft.Blur(strength=10)alpha(opacity=30)',
         $('op2').getStyle('filter'));
@@ -1434,21 +1416,23 @@ new Test.Unit.Runner({
     this.assertEqual('12px', $('style_test_1').getStyle('fontSize'));
 
     // getStyle on width/height should return values according to
-    // the CSS box-model, which doesn't include
-    // margin, padding, or borders
-    // TODO: This test fails on IE because there seems to be no way
-    // to calculate this properly (clientWidth/Height returns 0)
-    if (!navigator.appVersion.match(/MSIE/)) {
-      this.assertEqual('14px', $('style_test_dimensions').getStyle('width'));
-      this.assertEqual('17px', $('style_test_dimensions').getStyle('height'));
-    }
+    // the CSS box-model, which doesn't include margin, padding, or borders
+    var element = $('style_test_dimensions');
+    this.assertEqual(element.getWidth('content') + 'px',
+      element.getStyle('width'),
+      'Failed to resolve the correct width');
+
+    this.assertEqual(element.getHeight('content') + 'px',
+      element.getStyle('height'),
+      'Failed to resolve the correct height');
 
     // check "auto" value for browsers that support document.defaultView.getComputedStyle()
-    var div = $('style_test_3'), backup = div.style.height;
-    div.style.height = 'auto';
+    element = $('style_test_3');
+    var backup = element.style.height;
+    element.style.height = 'auto';
 
-    this.assertNotNull(div.getStyle('height'));
-    div.style.height = backup;
+    this.assertNotNull(element.getStyle('height'));
+    element.style.height = backup;
 
     // ensure units convert to px correctly
     var tests = {
@@ -1711,7 +1695,7 @@ new Test.Unit.Runner({
     this.assertEqual('some-className',
       p.writeAttribute({ 'className': 'some-className' }).readAttribute('class'));
 
-    this.assertEqual('some-id', 
+    this.assertEqual('some-id',
       label.writeAttribute({ 'for': 'some-id' }).readAttribute('for'));
 
     this.assertEqual('some-other-id',
@@ -1822,13 +1806,13 @@ new Test.Unit.Runner({
 
     var input = document.body.appendChild(new Element('input',
       { 'id': 'my_input_field_id', 'name': 'my_input_field' }));
- 
+
     this.assertEqual(input, document.body.lastChild);
     this.assertEqual('my_input_field', $(document.body.lastChild).name);
 
     // TODO: Fix IE7 and lower bug in getElementById()
     if (Fuse.Env.Agent.IE && $('my_input_field')) {
-      this.assertMatch(/name=["']?my_input_field["']?/,
+      this.assertMatch(/name=["']?my_input_field["']?/, // '
         $('my_input_field').outerHTML);
     }
 
@@ -1880,7 +1864,7 @@ new Test.Unit.Runner({
     this.assertEqual(100,
       $('dimensions-visible').getDimensions().height,
         '`dimensions-visible` height');
- 
+
     this.assertEqual(200,
       $('dimensions-visible').getDimensions().width,
       '`dimensions-visible` width');
@@ -1888,7 +1872,7 @@ new Test.Unit.Runner({
     this.assertEqual(100,
       $('dimensions-display-none').getDimensions().height,
       '`dimensions-display-none` height');
- 
+
     this.assertEqual(200,
       $('dimensions-display-none').getDimensions().width,
       '`dimensions-display-none` width');
@@ -1995,6 +1979,64 @@ new Test.Unit.Runner({
       global.assertEqual(clientWidth + border.width - padding.width, dimensions.width);
       global.assertEqual(36, dimensions.height);      
     })(this);
+  },
+
+  'testElementGetDimensionsPresets': function() {
+    function getNumericStyle(element, styleName) {
+      return parseFloat(Element.getStyle(element, styleName)) || 0;
+    }
+
+    var margin = { }, border = { }, padding = { },
+     el = $('style_test_dimensions_container'),
+     clientWidth = el.clientWidth;
+
+    border.left   = getNumericStyle(el, 'borderLeftWidth');
+    border.right  = getNumericStyle(el, 'borderRightWidth');
+
+    margin.left   = getNumericStyle(el, 'marginLeft');
+    margin.right  = getNumericStyle(el, 'marginRight');
+
+    padding.left  = getNumericStyle(el, 'paddingLeft');
+    padding.right = getNumericStyle(el, 'paddingRight');
+
+    border.width  = border.left  + border.right;
+    margin.width  = margin.left  + margin.right;
+    padding.width = padding.left + padding.right;
+
+    // content + padding + border (visual preset) [default]
+    var dimensions = el.getDimensions();
+    this.assertEqual(clientWidth + border.width, dimensions.width);
+    this.assertEqual(56, dimensions.height);
+
+    // content + padding + border + margin
+    dimensions = el.getDimensions('box');
+    this.assertEqual(clientWidth + border.width + margin.width,
+      dimensions.width, 'Failed width `box` preset');
+    this.assertEqual(76, dimensions.height, 'Failed height `box` preset');
+
+    // content + padding
+    dimensions = el.getDimensions('client');
+    this.assertEqual(clientWidth,
+      dimensions.width, 'Failed width `client` preset');
+    this.assertEqual(50, dimensions.height, 'Failed height `client` preset');
+
+    // content
+    dimensions = el.getDimensions('content');
+    this.assertEqual(clientWidth - padding.width,
+      dimensions.width, 'Failed width `content` preset');
+    this.assertEqual(30, dimensions.height, 'Failed height `content` preset');
+
+    // content + padding + border + margin (box preset)
+    dimensions = el.getDimensions({ 'border': 1, 'margin': 1, 'padding': 1 });
+    this.assertEqual(clientWidth + border.width + margin.width,
+      dimensions.width, 'Failed user options `box` width');
+    this.assertEqual(76, dimensions.height, 'Failed user options `box` height');
+
+    // border + content
+    dimensions = el.getDimensions({ 'border': 1 });
+    this.assertEqual(clientWidth + border.width - padding.width,
+      dimensions.width, 'Failed user options border+content width');
+    this.assertEqual(36, dimensions.height, 'Failed user options border+content height');
   },
 
   'testElementClonePosition': function() {
@@ -2395,11 +2437,11 @@ new Test.Unit.Runner({
     this.assertEqual('TABLE',
       $('tr_offset_parent_test').getOffsetParent().tagName.toUpperCase(),
       'offsetParent should be TABLE');
- 
+
     this.assertEqual('TH',
       $('th_offset_parent_test').getOffsetParent().tagName.toUpperCase(),
       'offsetParent should be TH');
- 
+
     this.assertEqual('TD',
       $('td_offset_parent_test').getOffsetParent().tagName.toUpperCase(),
       'offsetParent should be TD');
@@ -2422,12 +2464,11 @@ new Test.Unit.Runner({
     this.assertEqual(null, offsetParent);
   },
 
-  'testAbsolute': function() {
-    $('notInlineAbsoluted', 'inlineAbsoluted').each(function(elt) {
-      if ('_originalLeft' in elt) delete elt._originalLeft;
-      elt.makeAbsolute();
+  'testMakeAbsolute': function() {
+    $('notInlineAbsoluted', 'inlineAbsoluted').each(function(element) {
 
-      this.assertUndefined(elt._originalLeft,
+      element.makeAbsolute();
+      this.assertUndefined(element._madeAbsolute,
         'makeAbsolute() did not detect absolute positioning');
     }, this);
 
@@ -2475,15 +2516,15 @@ new Test.Unit.Runner({
       var relative    = element.getDimensions();
       relative.width  = Number(relative.width);
       relative.height = Number(relative.height);
-      
+
       this.assert(original.width == absolute.width && absolute.width == relative.width,
-        element.tagName + ' ' + element.className + '; original.width: ' + 
-        original.width +'; absolute.width: ' + absolute.width + '; relative.width: ' + 
+        element.tagName + ' ' + element.className + '; original.width: ' +
+        original.width +'; absolute.width: ' + absolute.width + '; relative.width: ' +
         relative.width);
 
       this.assert(original.height == absolute.height && absolute.height == relative.height,
-        element.tagName + ' ' + element.className + '; original.height: ' + 
-        original.height +'; absolute.height: ' + absolute.height + 
+        element.tagName + ' ' + element.className + '; original.height: ' +
+        original.height +'; absolute.height: ' + absolute.height +
         '; relative.height: ' +  relative.height);
 
     }, this);

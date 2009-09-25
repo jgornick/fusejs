@@ -1,5 +1,7 @@
   /*------------------------------ LANG: STRING ------------------------------*/
 
+  Fuse.scriptFragment = '<script[^>]*>([^\\x00]*?)<\/script>';
+
   Fuse.addNS('Util');
 
   Fuse.Util.$w = (function() {
@@ -13,7 +15,7 @@
   })();
 
   Fuse.String.interpret = (function() {
-    function interpret(value) { return Fuse.String(value == null ? '' : value) }
+    function interpret(value) { return Fuse.String(value == null ? '' : value); }
     return interpret;
   })();
 
@@ -43,7 +45,7 @@
 
   // primarily for Safari 2.0.2 and lower, based on work by Dean Edwards
   // http://code.google.com/p/base2/source/browse/trunk/lib/src/base2-legacy.js?r=239#174
-  if (Bug('STRING_REPLACE_COHERSE_FUNCTION_TO_STRING') ||
+  if (Bug('STRING_REPLACE_COERCE_FUNCTION_TO_STRING') ||
       Bug('STRING_REPLACE_BUGGY_WITH_GLOBAL_FLAG_AND_EMPTY_PATTERN')) (function(plugin) {
     function replace(pattern, replacement) {
       if (typeof replacement !== 'function')
@@ -102,7 +104,7 @@
       searchString = String(searchString);
 
       var string = String(this),
-       pos = 1 * arguments[1], // fast coerce to number
+       pos = +arguments[1], // fast coerce to number
        len = string.length,
        searchLen = searchString.length;
 
@@ -124,7 +126,7 @@
   // for Chome 1 and 2
   if (Bug('STRING_LAST_INDEX_OF_BUGGY_WITH_NEGATIVE_POSITION')) (function(plugin) {
     function lastIndexOf(searchString) {
-      var pos = 1 * arguments[1];
+      var pos = +arguments[1];
       return __lastIndexOf.call(this, searchString, pos < 0 ? 0 : pos);
     }
 
@@ -260,13 +262,15 @@
           (cache[expandoKey] = replace.call(string, matchHyphenated, toUpperCase));
       }
 
-      var replace = Fuse.String.plugin.replace,
-       cache = { },
-       matchHyphenated = /\-+(.)?/g;
+      var cache = { },
+       matchHyphenated = /\-+(.)?/g,
+       replace = Fuse.String.plugin.replace;
 
       return camelize;
     })();
 
+    // set private reference
+    capitalize =
     plugin.capitalize = (function() {
       function capitalize() {
         if (this == null) throw new TypeError;
@@ -289,7 +293,7 @@
       if (this == null) throw new TypeError;
       var endIndex, string = String(this);
 
-      length = 1 * length;
+      length = +length;
       if (isNaN(length)) length = 30;
 
       if (length < string.length) {
@@ -315,8 +319,8 @@
   /*--------------------------------------------------------------------------*/
 
   (function(plugin) {
-    var matchScripts   = RegExp(Fuse.ScriptFragment, 'gi'),
-     matchHTMLComments = Fuse.RegExp('<!--\\s*' + Fuse.ScriptFragment + '\\s*-->', 'gi'),
+    var matchScripts   = RegExp(Fuse.scriptFragment, 'gi'),
+     matchHTMLComments = Fuse.RegExp('<!--\\s*' + Fuse.scriptFragment + '\\s*-->', 'gi'),
      matchOpenTag      = /<script/i;
 
     plugin.evalScripts = function evalScripts() {
@@ -423,6 +427,12 @@
   /*--------------------------------------------------------------------------*/
 
   (function(plugin) {
+
+    function stripTags() {
+      if (this == null) throw new TypeError;
+      return Fuse.String(String(this).replace(matchTags, ''));
+    }
+
     function swapTagsToTokens(tag) {
       var length = tags.length;
       tags.push(tag);
@@ -449,16 +459,12 @@
         : result;
     }
 
-    function stripTags() {
-      if (this == null) throw new TypeError;
-      return Fuse.String(String(this).replace(matchTags, ''));
-    }
 
     // Information on parsing tags can be found at
     // http://www.w3.org/TR/REC-xml-names/#ns-using
     var matchTags = (function() {
       var name   = '\\w+',
-       space     = '[\\x20\\x09\\x0D\\x0A]',
+       space     = '[\\x20\\t\\r\\n]', // \x20 \x09 \x0D \x0A
        eq        = space + '?=' + space + '?',
        charRef   = '&#[0-9]+;',
        entityRef = '&' + name + ';',
@@ -468,20 +474,25 @@
 
       return new RegExp('<'+ name + '(?:' + space + attribute + ')*' + space + '?/?>|' +
         '</' + name + space + '?>', 'g');
-    })();
+    })(),
 
-    var div = Fuse._div, tags = [],
-     matchToken = new RegExp(expando + '\\d+' + expando, 'g'),
-     __unescape = function() { return div.textContent };
+    matchToken = new RegExp(expando + '\\d+' + expando, 'g'),
+
+    div = Fuse._div,
+
+    tags = [],
+
+    __unescape = function() { return div.textContent; };
+
 
     if (!Feature('ELEMENT_TEXT_CONTENT')) {
       div.innerHTML = '<pre>&lt;p&gt;x&lt;/p&gt;<\/pre>';
 
       if (Feature('ELEMENT_INNER_TEXT') && div.firstChild.innerText === '<p>x<\/p>')
-        __unescape = function() { return div.firstChild.innerText.replace(/\r/g, '') };
+        __unescape = function() { return div.firstChild.innerText.replace(/\r/g, ''); };
 
       else if (div.firstChild.innerHTML === '<p>x<\/p>')
-        __unescape = function() { return div.firstChild.innerHTML };
+        __unescape = function() { return div.firstChild.innerHTML; };
 
       else __unescape = function() {
         var node, nodes = div.firstChild.childNodes, parts = [], i = 0;

@@ -2,11 +2,13 @@
 
   Fuse.addNS('Ajax.Responders');
 
+  Fuse.Ajax.activeRequestCount = 0;
+
   // TODO: Utilize custom events for responders
   (function(Responders) {
     Responders.responders = {
-      'onCreate': Fuse.List(function() { Fuse.Ajax.activeRequestCount++ }),
-      'onDone':   Fuse.List(function() { Fuse.Ajax.activeRequestCount-- })
+      'onCreate': Fuse.List(function() { Fuse.Ajax.activeRequestCount++; }),
+      'onDone':   Fuse.List(function() { Fuse.Ajax.activeRequestCount--; })
     };
 
     Responders.dispatch = (function() {
@@ -38,53 +40,58 @@
     })();
 
     Responders.register = function register(responder) {
-      var found, handler, handlers, length, method, name;
+      var found, handler, handlers, length, method, name,
+       responders = this.responders;
+
       if (isHash(responder)) responder = responder._object;
 
       for (name in responder) {
         found    = false;
-        handlers = this.responders[name];
-        length   = handlers.length;
+        handlers = responders[name];
         method   = responder[name];
 
         // check if responder method is in the handlers list
-        if (handles)
-          while (handler = handlers[length--])
-            if (handler.__method === method) { found = true; break; }
+        if (handlers) {
+          length = handlers.length;
+          while (length--)
+            if (handlers[length].__method === method) { found = true; break; }
+        }
 
         if (!found) {
           // create handler if not found
           handler = (function(n) {
-            return function(request, json) { responder[n](request, json) }})(name);
+            return function(request, json) { responder[n](request, json); };})(name);
 
           // tie original method to handler
           handler.__method = method;
 
           // create handlers list if non-existent and add handler
-          if (!handlers) this.responders[name] = handlers = Fuse.List();
+          if (!handlers) responders[name] = handlers = Fuse.List();
           handlers.push(handler);
         }
       }
     };
 
     Responders.unregister = function unregister(responder) {
-      var handler, name, handlers, length, results;
+      var handler, name, handlers, length, results,
+       responders = this.responders;
+
       if (isHash(responder)) responder = responder._object;
 
       for (name in responder) {
-        if (handlers = this.responders[name]) {
+        if (handlers = responders[name]) {
+          i = 0;
+          method = responder[name];
           results = Fuse.List(); 
-          length  = handlers.length;
-          method  = responder[name];
 
           // rebuild handlers list excluding the handle that is tied to the responder method
-          while (handler = handlers[length--])
+          while (handler = handlers[i++])
             if (handler.__method !== method) results.push(handler);
-          this.responders[name] = results;
+          responders[name] = results;
         }
       }
     };
 
     // prevent JScript bug with named function expressions
-    var register = null, unregister =  null;
+    var register = null, unregister = null;
   })(Fuse.Ajax.Responders);

@@ -1,32 +1,24 @@
   /*--------------------------- SELECTOR: NWMATCHER --------------------------*/
 
-  (function(Selector) {
-    var NWMatcher;
-
+  (function(Selector, NodeList) {
     Selector.match = function match(element, selector) {
       function match(element, selector) {
-        return NWMatcher.match(element, String(selector || ''));
+        return nwMatch(element.raw || element, String(selector || ''));
       }
 
-      NWMatcher = NW.Dom;
+      nwMatch = NW.Dom.match;
       return (Selector.match = match)(element, selector);
     };
 
     Selector.select = function select(selector, context) {
-      var select = function select(selector, context) {
-        return NWMatcher.select(String(selector || ''), context || Fuse._doc, Fuse.List())
-          .map(Element.extend);
-      };
+      function select(selector, context) {
+        return nwSelect(String(selector || ''), 
+          context && context.raw || context || Fuse._doc, NodeList());
+      }
 
-      if (Feature('ELEMENT_EXTENSIONS'))
-        select = function select(selector, context) {
-          return NWMatcher.select(String(selector || ''), context || Fuse._doc, Fuse.List());
-        };
-
-      NWMatcher = NW.Dom;
+      nwSelect = NW.Dom.select;
       return (Selector.select = select)(selector, context);
     };
 
-    // prevent JScript bug with named function expressions
-    var match = null, select = null;
-  })(Fuse.Dom.Selector);
+    var nwMatch, nwSelect, match = null, select = null;
+  })(Fuse.Dom.Selector, Fuse.Dom.NodeList);

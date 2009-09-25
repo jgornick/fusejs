@@ -99,13 +99,13 @@
     'contentType':  'application/x-www-form-urlencoded',
     'encoding':     'UTF-8',
     'evalJS':       true,
-    'evalJSON':     !!Fuse.String.evalJSON,
+    'evalJSON':     !!Fuse.String.plugin.evalJSON,
     'forceMethod':  false,
     'method':       'post',
     'parameters':   '',
     'headers':      {
       'Accept': 'text/javascript, text/html, application/xml, text/xml, */*',
-      'X-Fuse-Version': Fuse.Version,
+      'X-Fuse-Version': Fuse.version,
       'X-Requested-With': 'XMLHttpRequest'
     }
   };

@@ -50,13 +50,6 @@
   /*--------------------------------------------------------------------------*/
 
   (function() {
-    Func.argumentNames = function argumentNames(fn) {
-      var names = Fuse.String(fn).match(/^[\s\(]*function[^(]*\(([^)]*)\)/)[1]
-       .replace(/\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g, '')
-        .replace(/\s+/g, '').split(',');
-      return names.length === 1 && !names[0].length ? Fuse.List() : names;
-    };
-
     Func.bindAsEventListener = function bindAsEventListener(fn, thisArg) {
       // allows lazy loading the target method
       var f, context, name;
@@ -93,7 +86,7 @@
         return arguments.length
           ? fn.apply(this, concatList(args, arguments))
           : fn.apply(this, args);
-      }
+      };
     };
 
     Func.delay = function delay(fn, timeout) {
@@ -138,15 +131,11 @@
         return arguments.length
           ? wrapper.apply(this, prependList(arguments, bind(fn, this)))
           : wrapper.call(this, bind(fn, this));
-      }
+      };
     };
 
     // prevent JScript bug with named function expressions
-    var argumentNames =    null,
-     bindAsEventListener = null,
-     curry =               null,
-     methodize =           null,
-     wrap =                null;
+    var bindAsEventListener = null, curry = null, methodize = null, wrap = null;
   })();
 
   /*--------------------------------------------------------------------------*/
@@ -155,7 +144,7 @@
     var name, i = 0,
      cache  = Fuse.updateGenerics.cache,
      plugin = Func.plugin,
-     names  = ['argumentNames', 'bind', 'bindAdEventListener', 'curry', 'delay', 'defer', 'methodize', 'wrap'];
+     names  = ['bind', 'bindAdEventListener', 'curry', 'delay', 'defer', 'methodize', 'wrap'];
 
     cache.Function = { };
 

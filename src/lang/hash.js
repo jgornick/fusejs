@@ -120,7 +120,7 @@
         }
       }
       else {
-        var count = 1 * callback, results = Fuse.List();
+        var count = +callback, results = Fuse.List();
         if (isNaN(count)) return results;
         count = count < 1 ? 1 : count;
         while (i < count && (pair = pairs[i])) results[i++] = _returnPair(pair);
@@ -141,7 +141,7 @@
         }
       }
       else {
-        var count = 1 * callback, results = Fuse.List();
+        var count = +callback, results = Fuse.List();
         if (isNaN(count)) return results;
         count = count < 1 ? 1 : count > length ? length : count;
         var  pad = length - count;
@@ -168,7 +168,7 @@
     };
 
     plugin.clone = (function() {
-      function clone() { return new $H(this) };
+      function clone() { return new $H(this); };
       return clone;
     })();
 
@@ -178,14 +178,14 @@
         // basic strict match
         if ((item = pair[1]) === value) return true;
         // match String and Number object instances
-        try { if (item.valueOf() === value.valueOf()) return true } catch (e) { }
+        try { if (item.valueOf() === value.valueOf()) return true; } catch (e) { }
       }
       return false;
     };
 
     plugin.filter = function filter(callback, thisArg) {
       var key, pair, value, i = 0, pairs = this._pairs, result = new $H();
-      callback = callback || function(value) { return value != null };
+      callback = callback || function(value) { return value != null; };
 
       while (pair = pairs[i++]) {
         if (callback.call(thisArg, value = pair[1], key = pair[0], this))
@@ -199,7 +199,7 @@
     };
 
     plugin.hasKey = (function() {
-      function hasKey(key) { return (expando + key) in this._data }
+      function hasKey(key) { return (expando + key) in this._data; }
       return hasKey;
     })();
 
@@ -298,7 +298,7 @@
 
     // assign any missing Enumerable methods
     if (Fuse.Enumerable) {
-      eachKey(Fuse.Enumerable.plugin, function(value, key, object) {
+      eachKey(Fuse.Enumerable, function(value, key, object) {
         if (hasKey(object, key) && typeof plugin[key] !== 'function')
           plugin[key] = value;
       });

@@ -64,7 +64,7 @@
 
     'DOCUMENT_CREATE_EVENT_OBJECT': function() {
       // true for IE
-      return isHostObject(Fuse._doc, 'createEventObject')
+      return isHostObject(Fuse._doc, 'createEventObject');
     },
 
     'DOCUMENT_RANGE': function(){
@@ -175,7 +175,7 @@
     },
 
     'ELEMENT_REMOVE_NODE': function() {
-      // true for IE
+      // true for IE and Opera
       return isHostObject(Fuse._docEl, 'removeNode');
     },
 
@@ -196,13 +196,6 @@
     'ELEMENT_TEXT_CONTENT': function() {
       // true for all but IE and Safari 2
       return typeof Fuse._div.textContent === 'string';
-    },
-
-    'FUNCTION_TO_STRING_RETURNS_SOURCE': function() {
-      // true for all but some mobile browsers
-      function toStringTest(param1, param2) { var x = 1 }
-      var source = toStringTest.toString();
-      return source.indexOf('param1') > -1 && source.indexOf('x = 1') > -1;
     },
 
     'HTML_ELEMENT_CLASS': function() {
@@ -241,8 +234,15 @@
   Bug.set({
     'ARRAY_CONCAT_ARGUMENTS_BUGGY': function() {
       // true for Opera
-      return (function() { return Array.prototype.concat &&
-        [].concat(arguments).length === 2 })(1, 2);
+      var array = [];
+      return (function() { return array.concat &&
+        array.concat(arguments).length === 2; })(1, 2);
+    },
+
+    'ARRAY_SLICE_EXLUDES_TRAILING_UNDEFINED_INDEXES': function() {
+      // true for Opera 9,25
+      var array = [1]; array[2] = 1;
+      return array.slice && array.slice(0, 2).length === 1;
     },
 
     'ATTRIBUTE_NODES_PERSIST_ON_CLONED_ELEMENTS': function() {
@@ -409,15 +409,15 @@
       return data[0] || data[1];
     },
 
-    'STRING_REPLACE_COHERSE_FUNCTION_TO_STRING': function() {
+    'STRING_REPLACE_COERCE_FUNCTION_TO_STRING': function() {
       // true for Safari 2
-      var func = function() { return '' };
+      var func = function() { return ''; };
       return 'a'.replace(/a/, func) === String(func);
     },
 
     'STRING_REPLACE_BUGGY_WITH_GLOBAL_FLAG_AND_EMPTY_PATTERN': function() {
       // true for Chrome 1
-      var string = 'xy', replacement = function() { return 'o' };
+      var string = 'xy', replacement = function() { return 'o'; };
       return !(string.replace(/()/g, 'o') === 'oxoyo' &&
         string.replace(new RegExp('', 'g'), replacement) === 'oxoyo' &&
         string.replace(/(y|)/g, replacement) === 'oxoo');

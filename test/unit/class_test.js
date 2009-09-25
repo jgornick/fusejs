@@ -81,50 +81,54 @@ new Test.Unit.Runner({
     // augment the constructor and test
     var Dodo = Fuse.Class(Fixtures.Animal, {
       'initialize': function(name) {
-        this._super(name);
+        Dodo.callSuper(this, 'initialize', name);
         this.extinct = true;
       },
 
       'say': function(message) {
-        return this._super(message) + ' honk honk';
-      },
-
-      'speed': 4
+        return Dodo.callSuper(this, arguments, message) + ' honk honk';
+      }
     });
 
     var gonzo = new Dodo('Gonzo');
-    this.assertEqual('Gonzo', gonzo.name);
-    this.assert(gonzo.extinct, 'Dodo birds should be extinct');
-    this.assertEqual('Gonzo: hello honk honk', gonzo.say('hello'));
+    this.assertEqual('Gonzo', gonzo.name,
+      'Should have called super `initialize` method and set `name` property');
 
-    // test against super that is not a method
-    var Twit = Fuse.Class(Dodo, {
-      'initialize': function() { },
-      'speed': function() {
-        if (this._super && !Fuse.Object.isFunction(this._super))
-          throw new TypeError;
-      }
-    });
+    this.assert(gonzo.extinct, 'Dodo birds should be extinct',
+      'Should have set the `extinct` property of the Dodo instance');
 
-    this.assertNothingRaised(function() { new Twit().speed() });
+    this.assertEqual('Gonzo: hello honk honk', gonzo.say('hello'),
+      'Should have called super `say` method resolved from arguments.callee');
   },
 
-  'testClassAddMethods': function() {
+  'testClassExtend': function() {
     var tom = new Fixtures.Cat('Tom'),
      jerry  = new Fixtures.Mouse('Jerry');
 
-    Fixtures.Animal.addMethods({
-      'sleep': function() { return this.say('ZZZ') }
+    Fixtures.Animal.extend({
+      'sleep': function() { return this.say('ZZZ'); }
     });
 
-    Fixtures.Mouse.addMethods({
-      'sleep': function() {
-        return this._super() + ' ... no, can\'t sleep! Gotta steal cheese!';
+    Fixtures.Mouse.extend(
+      {
+        'staticTest': function() {
+          return 'static';
+        }
       },
-      'escape': function(cat) {
-        return this.say('(from a mousehole) Take that, ' + cat.name + '!');
+      {
+        'sleep': function() {
+          return Fixtures.Mouse.callSuper(this, 'sleep') +
+            ' ... no, can\'t sleep! Gotta steal cheese!';
+        },
+
+        'escape': function(cat) {
+          return this.say('(from a mousehole) Take that, ' + cat.name + '!');
+        }
       }
-    });
+    );
+
+    this.assertEqual('function', typeof Fixtures.Mouse.staticTest,
+      'Class.extend(static, plugin) should have added a static method to Fixtures.Mouse');
 
     this.assertEqual('Tom: ZZZ', tom.sleep(),
       'added instance method not available to subclass');
@@ -139,7 +143,7 @@ new Test.Unit.Runner({
     this.assertUndefined(tom.escape);
     this.assertUndefined(new Fixtures.Animal().escape);
 
-    Fixtures.Animal.addMethods({
+    Fixtures.Animal.extend({
       'sleep': function() { return this.say('zZzZ') }
     });
 
@@ -169,15 +173,16 @@ new Test.Unit.Runner({
     var Foo = Fuse.Class({
       'toString': function() { return 'toString' },
       'valueOf':  function() { return 'valueOf'  }
-    });
+    }),
 
-    var Parent = Fuse.Class({
+    Parent = Fuse.Class({
       'm1': function(){ return 'm1' },
       'm2': function(){ return 'm2' }
-    });
-    var Child = Fuse.Class(Parent, {
-      'm1': function() { return this._super() + ' child' },
-      'm2': function() { return this._super() + ' child' }
+    }),
+
+    Child = Fuse.Class(Parent, {
+      'm1': function() { return Child.callSuper(this, 'm1') + ' child' },
+      'm2': function() { return Child.callSuper(this, 'm2') + ' child' }
     });
 
     if (Fuse.Env.Feature('FUNCTION_TO_STRING_RETURNS_SOURCE'))
@@ -185,5 +190,28 @@ new Test.Unit.Runner({
 
     this.assertEqual('toString', new Foo().toString());
     this.assertEqual('valueOf',  new Foo().valueOf());
+  },
+
+  'testGrandChildClass': function() {
+    var Parent = Fuse.Class({
+      'say': function() {
+        return 'Parent#say';
+      }
+    }),
+
+    Child = Fuse.Class(Parent, {
+      'say': function() {
+        return 'Child#say > ' + Child.callSuper(this, 'say');
+      }
+    }),
+
+    GrandChild = Fuse.Class(Child, {
+      'say': function() {
+        return 'GrandChild#say > ' + GrandChild.callSuper(this, 'say');
+      }
+    });
+
+    var grandChild = new GrandChild;
+    this.assertEqual('GrandChild#say > Child#say > Parent#say', grandChild.say());
   }
 });

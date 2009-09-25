@@ -1,12 +1,10 @@
   /*--------------------------- SELECTOR: DOMQUERY ---------------------------*/
 
-  (function(Selector) {
-    var extSelect;
-
+  (function(Selector, NodeList) {
     Selector.match = function match(element, selector) {
       function match(element, selector) {
         var item, i = 0,
-         results = extSelect(String(selector || ''), getDocument(element));
+         results = extSelect(String(selector || ''), Fuse.getDocument(element));
         while (item = results[i++])
           if (item === element) return true;
         return false;
@@ -17,22 +15,10 @@
     };
 
     Selector.select = function select(selector, context) {
-      var select = function select(selector, context) {
-        return toList(extSelect(String(selector || ''), context || Fuse._doc))
-          .map(Element.extend);
-      };
-
-      if (Feature('ELEMENT_EXTENSIONS'))
-        select = function select(selector, context) {
-          return toList(extSelect(String(selector || ''), context || Fuse._doc));
-        };
-
-      extSelect = Ext.DomQuery.select;
-      toList = Fuse.List.fromNodeList;
-      return (Selector.select = select)(selector, context);
+      return toList(extSelect(String(selector || ''),
+        context && context.raw || context || Fuse._doc));
     };
 
-    // prevent JScript bug with named function expressions
-    var match = null, select = null;
-  })(Fuse.Dom.Selector);
+    var extSelect, toList = NodeList.fromNodeList, match = null, select = null;
+  })(Fuse.Dom.Selector, Fuse.Dom.NodeList);
 
