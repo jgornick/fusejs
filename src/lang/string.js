@@ -200,7 +200,7 @@
     plugin.parseQuery = plugin.toQueryParams;
 
     // prevent JScript bug with named function expressions
-    var times = null, toArray = null, toQueryParams = null;
+    var times = nil, toArray = nil, toQueryParams = nil;
   })(Fuse.String.plugin);
 
   /*--------------------------------------------------------------------------*/
@@ -222,9 +222,11 @@
     };
 
     plugin.endsWith = function endsWith(pattern) {
+      // when searching for a pattern at the end of a long string
+      // indexOf(pattern, fromIndex) is faster than lastIndexOf(pattern) 
       if (this == null) throw new TypeError;
       var string = String(this), d = string.length - pattern.length;
-      return d >= 0 && string.lastIndexOf(pattern) == d;
+      return d >= 0 && string.indexOf(pattern, d) === d;
     };
 
     plugin.scan = function scan(pattern, callback) {
@@ -234,17 +236,19 @@
     };
 
     plugin.startsWith = function startsWith(pattern) {
+      // when searching for a pattern at the start of a long string
+      // lastIndexOf(pattern, fromIndex) is faster than indexOf(pattern) 
       if (this == null) throw new TypeError;
-      return String(this).indexOf(pattern) == 0;
+      return !String(this).lastIndexOf(pattern, 0);
     };
 
     // prevent JScript bug with named function expressions
-    var blank =    null,
-      contains =   null,
-      empty =      null,
-      endsWith =   null,
-      scan =       null,
-      startsWith = null;
+    var blank =    nil,
+      contains =   nil,
+      empty =      nil,
+      endsWith =   nil,
+      scan =       nil,
+      startsWith = nil;
   })(Fuse.String.plugin);
 
   /*--------------------------------------------------------------------------*/
@@ -313,7 +317,7 @@
     };
 
     // prevent JScript bug with named function expressions
-    var hyphenate = null, truncate = null, underscore = null;
+    var hyphenate = nil, truncate = nil, underscore = nil;
   })(Fuse.String.plugin);
 
   /*--------------------------------------------------------------------------*/
@@ -347,13 +351,13 @@
     };
 
     // prevent JScript bug with named function expressions
-    var evalScripts = null, extractScripts = null, stripScripts = null;
+    var evalScripts = nil, extractScripts = nil, stripScripts = nil;
   })(Fuse.String.plugin);
 
   /*--------------------------------------------------------------------------*/
 
   (function(plugin) {
-    var sMap = Fuse.RegExp.specialCharMap.s;
+    var sMap = Fuse.RegExp.SPECIAL_CHARS.s;
 
     // ECMA-5 15.5.4.20
     if (!plugin.trim)
@@ -391,7 +395,7 @@
       };
 
     // prevent JScript bug with named function expressions
-    var trim = null, trimLeft = null, trimRight = null;
+    var trim = nil, trimLeft = nil, trimRight = nil;
   })(Fuse.String.plugin);
 
   /*--------------------------------------------------------------------------*/

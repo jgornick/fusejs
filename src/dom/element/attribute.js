@@ -51,7 +51,7 @@
 
         if (T.write[name])
           T.write[name](element, value);
-        else if (value === false || value === null)
+        else if (value === false || value == null)
           element.removeAttribute(contentName);
         else if (value === true)
           element.setAttribute(contentName, contentName);
@@ -66,7 +66,7 @@
     };
 
     // prevent JScript bug with named function expressions
-    var readAttribute = null, writeAttribute = null;
+    var readAttribute = nil, writeAttribute = nil;
   })(Element.plugin);
 
 
@@ -177,7 +177,7 @@
 
       // get and set `style` attribute
       value = (node = label.getAttributeNode('style')) && node.value;
-      if (typeof value !== 'string' || value.indexOf('display:block') != 0) {
+      if (typeof value !== 'string' || value.lastIndexOf('display:block', 0)) {
         T.read.style  = getStyle;
         T.write.style = setStyle;
       }

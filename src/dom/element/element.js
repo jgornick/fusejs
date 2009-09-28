@@ -1,5 +1,15 @@
   /*-------------------------------- ELEMENT ---------------------------------*/
 
+  // make Fuse() pass to Fuse.get()
+  Fuse =
+  global.Fuse = (function(__Fuse) {
+    function Fuse(object) {
+      return Fuse.get(object);
+    }
+    return Obj.extend(__Fuse.Class({ 'constructor': Fuse }), __Fuse,
+      function(value, key, object) { if (hasKey(object, key)) object[key] = value; });
+  })(Fuse);
+
   Element =
   Fuse.addNS('Dom.Element', Node, {
     'constructor': (function() {
@@ -401,11 +411,11 @@
         element.insertBefore(node, element.firstChild);
       },
 
-      'bottom': function bottom(element, node) {
+      'bottom': function(element, node) {
         element.appendChild(node);
       },
 
-      'after': function after(element, node) {
+      'after': function(element, node) {
         element.parentNode &&
           element.parentNode.insertBefore(node, element.nextSibling);
       }
@@ -419,10 +429,52 @@
       '11': 1
     },
 
+    INSERT_POSITIONS_USING_PARENT_NODE = {
+      'before': 1,
+      'after':  1
+    },
+
     setTimeout = global.setTimeout,
 
+    setScriptText = (function() {
+      function setScriptText(element, text) {
+        element.removeChild(element.firstChild);
+        element.appendChild(textNode.cloneNode(false)).data = text;
+      }
+
+      if (Feature('ELEMENT_SCRIPT_HAS_TEXT_PROPERTY'))
+        return function(element, text) { element.text = text; };
+
+      var textNode = Fuse._doc.createTextNode('');
+      if (!Bug('ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT'))
+        return setScriptText;
+
+      textNode = Fuse._doc.createComment('');
+      return function(element, text) {
+        setScriptText(element, text);
+        global.eval(element.firstChild.data);
+      };
+    })(),
+
     replaceElement = (function(){
-      function getByTagName(node, tagName) {
+      function replaceElement(element, node) {
+        element.parentNode.replaceChild(node, element);
+      }
+
+      if (!Bug('ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT'))
+        return replaceElement;
+
+      var T = ELEMENT_INSERT_METHODS,
+
+      before = T.before,
+
+      top    = T.top,
+
+      bottom = T.bottom,
+
+      after  = T.after,
+
+      getByTagName = function(node, tagName) {
         var results = [], child = node.firstChild;
         while (child) {
           if (getNodeName(child) === tagName)
@@ -436,10 +488,10 @@
           child = child.nextSibling;
         }
         return results;
-      }
+      },
 
-      function wrapper(method, element, node) {
-        var i = 0, scripts = [];
+      wrapper = function(method, element, node) {
+        var textNode, i = 0, scripts = [];
         if (INSERTABLE_NODE_TYPES[node.nodeType]) {
           if (getNodeName(node) === 'SCRIPT')
             scripts = [node];
@@ -450,33 +502,27 @@
         }
 
         method(element, node);
-        while (scripts[i]) global.eval(String(scripts[i++].text));
-      }
+        while (script = scripts[i++]) {
+          textNode = script.firstChild;
+          setScriptText(script, textNode && textNode.data || '');
+        }
+      };
 
-      function replaceElement(element, node) {
-        element.parentNode.replaceChild(node, element);
-      }
+      // fix inserting script elements in Safari <= 2.0.2 and Firefox 2.0.0.2
+      T.before = function(element, node) { wrapper(before, element, node); };
+      T.top    = function(element, node) { wrapper(top,    element, node); };
+      T.bottom = function(element, node) { wrapper(bottom, element, node); };
+      T.after  = function(element, node) { wrapper(after,  element, node); };
 
-      // fix Safari <= 2.0.2 inserting script elements
-      if (Bug('ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT_PROPERTY_ON_INSERT')) {
-        var T = ELEMENT_INSERT_METHODS,
-         before = T.before, top = T.top, bottom = T.bottom, after = T.after;
-
-        T.before = function(element, node) { wrapper(before, element, node); };
-        T.top    = function(element, node) { wrapper(top,    element, node); };
-        T.bottom = function(element, node) { wrapper(bottom, element, node); };
-        T.after  = function(element, node) { wrapper(after,  element, node); };
-
-        return function(element, node) {
-          wrapper(replaceElement, element, node);
-        };
-      }
-
-      return replaceElement;
+      return function(element, node) {
+        wrapper(replaceElement, element, node);
+      };
     })();
 
+    /*------------------------------------------------------------------------*/
+
     plugin.insert = function insert(insertions) {
-      var content, fragment, insertContent, position, nodeName,
+      var content, insertContent, nodeName, position, stripped,
        element = this.raw || this;
 
       if (insertions) {
@@ -503,35 +549,49 @@
         }
         else continue;
 
-        fragment = Fuse.Dom.getFragmentFromString(content.stripScripts(),
-          position === 'before' || position === 'after' ? element.parentNode : element);
+        if (content != '') {
+          stripped = content.stripScripts();
+          if (stripped != '')
+            insertContent(element, Fuse.Dom.getFragmentFromString(stripped,
+              INSERT_POSITIONS_USING_PARENT_NODE[position] ? element.parentNode : element));
 
-        insertContent(element, fragment);
-        setTimeout(function() { content.evalScripts(); }, 10);
+          // only evalScripts if there are scripts
+          if (content.length !== stripped.length)
+            setTimeout(function() { content.evalScripts(); }, 10);
+        }
       }
       return this;
     };
 
     plugin.replace = function replace(content) {
-      var element = this.raw || this;
-      if (!content || content == '')
-        return element.parentNode.removeChild(element);
-      if (content.toElement)
-        content = content.toElement();
-      else if (!INSERTABLE_NODE_TYPES[content.nodeType]) {
-        var html = Obj.toHTML(content);
-        setTimeout(function() { html.evalScripts(); }, 10);
-        content = Fuse.Dom.getFragmentFromString(html.stripScripts(), element.parentNode);
+      var html, stripped, element = this.raw || this;
+
+      if (content && content != '') {
+        if (content.toElement)
+          content = content.toElement();
+        else if (INSERTABLE_NODE_TYPES[content.nodeType]) {
+          html = Obj.toHTML(content);
+          stripped = html.stripScripts();
+          content = stripped == '' ? '' :
+            Fuse.Dom.getFragmentFromString(stripped, element.parentNode);
+
+          if (content.length !== stripped.length)
+            setTimeout(function() { html.evalScripts(); }, 10);
+        }
       }
 
-      replaceElement(element, content);
+      if (!content || content == '')
+        element.parentNode.removeChild(element);
+      else if (INSERTABLE_NODE_TYPES[content.nodeType])
+        replaceElement(element, content);
+
       return this;
     };
 
     plugin.update = function update(content) {
-      var element = this.raw || this;
+      var stripped, element = this.raw || this;
       if (getNodeName(element) === 'SCRIPT') {
-        element.text = content || '';
+        setScriptText(element, content);
       } else {
         if (content && content != '') {
           if (content.toElement)
@@ -539,12 +599,17 @@
           if (INSERTABLE_NODE_TYPES[content.nodeType]) {
             element.innerHTML = '';
             element.appendChild(content);
-            return this;
           }
-          content = Obj.toHTML(content);
-          element.innerHTML = content.stripScripts();
-          setTimeout(function() { content.evalScripts(); }, 10);
-        } else element.innerHTML = '';
+          else {
+            content = Obj.toHTML(content);
+            stripped = content.stripScripts();
+            element.innerHTML = stripped;
+
+            if (content.length !== stripped.length)
+              setTimeout(function() { content.evalScripts(); }, 10);
+          }
+        }
+        else element.innerHTML = '';
       }
       return this;
     };
@@ -558,7 +623,7 @@
          isBuggy  = BUGGY[nodeName];
 
         if (nodeName === 'SCRIPT') {
-          element.text = content || '';
+          setScriptText(element, content);
         } else {
           // remove children
           if (isBuggy) {
@@ -573,11 +638,14 @@
               content = Obj.toHTML(content);
               stripped = content.stripScripts();
 
-              if (isBuggy)
-                element.appendChild(Fuse.Dom.getFragmentFromString(stripped, element));
+              if (isBuggy) {
+                if (stripped != '')
+                  element.appendChild(Fuse.Dom.getFragmentFromString(stripped, element));
+              }
               else element.innerHTML = stripped;
 
-              setTimeout(function() { content.evalScripts(); }, 10);
+              if (content.length !== stripped.length)
+                setTimeout(function() { content.evalScripts(); }, 10);
             }
           }
         }
@@ -600,7 +668,7 @@
     })();
 
     // prevent JScript bug with named function expressions
-    var insert = null, replace = null, update = null;
+    var insert = nil, replace = nil, update = nil;
   })(Element.plugin);
 
   /*--------------------------------------------------------------------------*/
@@ -622,10 +690,6 @@
 
     plugin.empty = function empty() {
       return Fuse.String((this.raw || this).innerHTML).blank();
-    };
-
-    plugin.getFuseId = function getFuseId() {
-      return (this.raw || this).getFuseId();
     };
 
     plugin.identify = (function() {
@@ -730,14 +794,14 @@
     };
 
     // prevent JScript bug with named function expressions
-    var cleanWhitespace = null,
-     empty =              null,
-     hide =               null,
-     getFuseId =          null,
-     isFragment =         null,
-     remove =             null,
-     scrollTo =           null,
-     show =               null,
-     toggle =             null,
-     wrap =               null;
+    var cleanWhitespace = nil,
+     empty =              nil,
+     hide =               nil,
+     getFuseId =          nil,
+     isFragment =         nil,
+     remove =             nil,
+     scrollTo =           nil,
+     show =               nil,
+     toggle =             nil,
+     wrap =               nil;
   })(Element.plugin);

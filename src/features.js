@@ -240,7 +240,7 @@
     },
 
     'ARRAY_SLICE_EXLUDES_TRAILING_UNDEFINED_INDEXES': function() {
-      // true for Opera 9,25
+      // true for Opera 9.25
       var array = [1]; array[2] = 1;
       return array.slice && array.slice(0, 2).length === 1;
     },
@@ -301,7 +301,7 @@
         des.position = 'static';
         des.top = des.left = '';
 
-        var style = Fuse._doc.defaultView.getComputedStyle(Fuse._docEl, null);
+        var style = Fuse._doc.defaultView.getComputedStyle(Fuse._docEl, nil);
         result = (style && style.top === '0px' && style.left === '0px');
         des.cssText = backup;
         return result;
@@ -313,7 +313,7 @@
         // true for Opera 9.2x
         var docEl = Fuse._docEl, des = docEl.style, backup = des.paddingBottom;
         des.paddingBottom = '1px';
-        var style = Fuse._doc.defaultView.getComputedStyle(docEl, null),
+        var style = Fuse._doc.defaultView.getComputedStyle(docEl, nil),
          result = style && (parseInt(style.height) || 0) ===  docEl.offsetHeight;
         des.paddingBottom = backup;
         return result;
@@ -327,7 +327,7 @@
         des.display = 'none';
 
         // In Safari 2 getComputedStyle() will return null for elements with style display:none
-        var style = Fuse._doc.defaultView.getComputedStyle(Fuse._docEl, null),
+        var style = Fuse._doc.defaultView.getComputedStyle(Fuse._docEl, nil),
          result = style && style.height === '0px';
 
         des.display = backup;
@@ -364,16 +364,6 @@
         delete prototype[expando];
         return result;
       }
-    },
-
-    'ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT_PROPERTY_ON_INSERT': function() {
-      var docEl = Fuse._docEl, element = Fuse._doc.createElement('script');
-      element.text = 'Fuse.' + expando +' = true;';
-      docEl.insertBefore(element, docEl.firstChild);
-      var result = !Fuse[expando];
-      docEl.removeChild(element);
-      delete Fuse[expando];
-      return result;
     },
 
     'ELEMENT_TABLE_INNERHTML_INSERTS_TBODY': function() {
@@ -436,9 +426,9 @@
   Bug.set((function() {
     function createInnerHTMLTest(source, innerHTML, targetNode) {
       return function() {
-        var div = Fuse._div, result = true;
+        var element, div = Fuse._div, result = true;
         div.innerHTML = source;
-        var element = div.firstChild;
+        element = div.firstChild;
         if (targetNode) element = element.getElementsByTagName(targetNode)[0];
         try {
           result = (element.innerHTML = innerHTML) &&
@@ -470,3 +460,44 @@
       )
     };
   })());
+
+  (function() {
+    function createScriptTest(testType) {
+      return function() {
+        var hasText, evalFailed,
+         doc    = Fuse._doc,
+         docEl  = Fuse._docEl,
+         code   = 'Fuse.' + expando +' = true;',
+         script = doc.createElement('SCRIPT');
+
+        try {
+          script.appendChild(doc.createTextNode(code));
+        } catch (e) {
+          hasText = 'text' in script;
+        }
+
+        docEl.insertBefore(script, docEl.firstChild);
+        evalFailed = !Fuse[expando];
+
+        // clear text so Firefox 2.0.0.2 won't perform a delayed eval
+        if (!hasText) script.firstChild.data = '';
+
+        docEl.removeChild(script);
+        delete Fuse[expando];
+
+        Feature.set({
+          'ELEMENT_SCRIPT_HAS_TEXT_PROPERTY': hasText });
+
+        Bug.set({
+          'ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT': evalFailed });
+
+        return ({ 'feature': hasText, 'bug': evalFailed })[testType];
+      };
+    }
+
+    Feature.set({
+      'ELEMENT_SCRIPT_HAS_TEXT_PROPERTY': createScriptTest('feature') });
+
+    Bug.set({
+      'ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT': createScriptTest('bug') });
+  })();

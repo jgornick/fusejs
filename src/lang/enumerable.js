@@ -1,5 +1,6 @@
   /*---------------------------- LANG: ENUMERABLE ----------------------------*/
 
+  Enumerable =
   Fuse.Enumerable = { };
 
   (function(mixin) {
@@ -200,24 +201,24 @@
     mixin.toList = mixin.toArray;
 
     // prevent JScript bug with named function expressions
-    var contains = null,
-     each =        null,
-     eachSlice =   null,
-     every =       null,
-     filter =      null,
-     first =       null,
-     inject =      null,
-     inGroupsOf =  null,
-     invoke =      null,
-     last =        null,
-     map =         null,
-     max =         null,
-     min =         null,
-     partition =   null,
-     pluck =       null,
-     size =        null,
-     some =        null,
-     sortBy =      null,
-     toArray =     null,
-     zip =         null;
-  })(Fuse.Enumerable);
+    var contains = nil,
+     each =        nil,
+     eachSlice =   nil,
+     every =       nil,
+     filter =      nil,
+     first =       nil,
+     inject =      nil,
+     inGroupsOf =  nil,
+     invoke =      nil,
+     last =        nil,
+     map =         nil,
+     max =         nil,
+     min =         nil,
+     partition =   nil,
+     pluck =       nil,
+     size =        nil,
+     some =        nil,
+     sortBy =      nil,
+     toArray =     nil,
+     zip =         nil;
+  })(Enumerable);

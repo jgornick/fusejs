@@ -24,7 +24,7 @@
       };
 
       // prevent JScript bug with named function expressions
-      var from = null, fromNodeList = null;
+      var from = nil, fromNodeList = nil;
     })();
 
     /*--------------------------------------------------------------------------*/
@@ -389,24 +389,24 @@
       plugin.toList  = plugin.clone;
 
       // prevent JScript bug with named function expressions
-      var _each =  null,
-       clear =     null,
-       compact =   null,
-       each =      null,
-       first =     null,
-       flatten =   null,
-       insert =    null,
-       invoke =    null,
-       last =      null,
-       max =       null,
-       min =       null,
-       partition = null,
-       pluck =     null,
-       size =      null,
-       sortBy =    null,
-       unique =    null,
-       without =   null,
-       zip =       null;
+      var _each =  nil,
+       clear =     nil,
+       compact =   nil,
+       each =      nil,
+       first =     nil,
+       flatten =   nil,
+       insert =    nil,
+       invoke =    nil,
+       last =      nil,
+       max =       nil,
+       min =       nil,
+       partition = nil,
+       pluck =     nil,
+       size =      nil,
+       sortBy =    nil,
+       unique =    nil,
+       without =   nil,
+       zip =       nil;
     })(List.plugin);
 
     /*--------------------------------------------------------------------------*/
@@ -566,22 +566,22 @@
         };
 
       // assign any missing Enumerable methods
-      if (Fuse.Enumerable) {
-        eachKey(Fuse.Enumerable, function(value, key, object) {
+      if (Enumerable) {
+        eachKey(Enumerable, function(value, key, object) {
           if (hasKey(object, key) && typeof plugin[key] !== 'function')
             plugin[key] = value;
         });
       }
 
       // prevent JScript bug with named function expressions
-      var concat =   null,
-       every =       null,
-       filter =      null,
-       forEach =     null,
-       indexOf =     null,
-       lastIndexOf = null,
-       map =         null,
-       some =        null;
+      var concat =   nil,
+       every =       nil,
+       filter =      nil,
+       forEach =     nil,
+       indexOf =     nil,
+       lastIndexOf = nil,
+       map =         nil,
+       some =        nil;
     })(List.plugin);
   };
 

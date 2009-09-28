@@ -1,3 +1,21 @@
+* Make Fuse(element) point to Fuse.get(element) when DOM modules are included. [jddalton]
+
+* Make Fuse.Range#max and Fuse.Range#min only require Fuse.Enumerable equivalents when passing a callback. [jddalton]
+
+* Add private `Enumerable` variable to shorten the Fuse.Enumerable lookup. [jddalton]
+
+* Add private `nil` variable to shorten some null assignments. [jddalton, Kyle Simpson]
+
+* Optimize Fuse.Dom.Element methods `insert`, `update`, and `replace` by only evaling scripts or creating nodes when needed. [jddalton]
+
+* Overhaul how Fuse.Dom.Element methods read and write SCRIPT element text. [jddalton]
+
+* Add Fuse.Dom.Node#getFuseId so it can be inherited by all other element/node classes. [jddalton]
+
+* Optimize Fuse.String#startsWith and Fuse.String#endsWith. [Prototype LH #808] [jddalton, Yaffle]
+
+* Cleanup and optimize Fuse.Fusebox() as well as add Firefox 1.5 - 2.0.0.2 compatibility. [jddalton]
+
 * Expose Fuse.getDocument() and Fuse.getWindow(). [jddalton]
 
 * Make Fuse.Dom.Node() pass to Fuse.Dom.Element.decorate() if the nodeType is equal to 1. [jddalton]
