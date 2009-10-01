@@ -1,3 +1,17 @@
+* Move Fuse.String#scan to template.js so it is with other `gsub` centric methods. [jddalton]
+
+* Futher optimize Fuse.String#times by using recursion. [Dr. J.R.Stockton, jddalton, kangax, Yaffle]
+
+* Allow Fuse.String#extractScripts() to accept a callback argument which reduces one iteration in Fuse.String#evalScripts. [jddalton]
+
+* Cleanup string.js and lazy define Fuse.String#escapeHTML and Fuse.String#unescapeHTML. [jddalton]
+
+* Move all DOM functionality to the src/dom directory. [jddalton]
+
+* Optimize Fuse.String#lastIndexOf by removing the use of the arguments object and make Fuse.Array#indexOf and Fuse.Array#lastIndexOf use toInteger(). [jddalton]
+
+* Optimize Fuse.String#times by using the `Exponentiation by squaring` algorithm. [Yaffle]
+
 * Add support for Fuse.get('<div>') and Fuse.Dom.Element('<div>') to return a new decorated element. [jddalton]
 
 * Make Fuse(element) point to Fuse.get(element) when DOM modules are included. [jddalton]
