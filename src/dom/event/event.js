@@ -53,7 +53,7 @@
       // Fix a Safari bug where a text node gets passed as the target of an
       // anchor click rather than the anchor itself.
       return node && node.nodeType === 3
-        ? decorate(node.parentNode)
+        ? fromElement(node.parentNode)
         : Element(node);
     };
 
@@ -182,8 +182,8 @@
 
     function relatedTarget(event) {
       switch (event.type) {
-        case 'mouseover': return decorate(event.fromElement);
-        case 'mouseout':  return decorate(event.toElement);
+        case 'mouseover': return fromElement(event.fromElement);
+        case 'mouseout':  return fromElement(event.toElement);
         default:          return null;
       }
     }
@@ -214,8 +214,7 @@
     }
 
     function getOrCreateCache(id, eventName) {
-      var data = Data[id],
-       events = data.events || (data.events ={ });
+      var data = Data[id], events = data.events || (data.events = { });
       return (events[eventName] = events[eventName] ||
         { 'handlers': [], 'dispatcher': false });
     }
@@ -234,33 +233,36 @@
     // executing its observers before allowing the
     // window onload event to proceed.
     function domLoadWrapper(event) {
-      if (!Fuse._doc.loaded) {
+      var doc = Fuse._doc, docEl = Fuse._docEl,
+       decoratedDoc = Fuse.get(doc);
+
+      if (!decoratedDoc.loaded) {
         event = event || global.event;
         event.eventName = 'dom:loaded';
 
         // define pseudo private body and root properties
-        Fuse._body     = Fuse._doc.body;
-        Fuse._root     = Fuse._docEl;
-        Fuse._scrollEl = Fuse._body;
+        Fuse._body     =
+        Fuse._scrollEl = doc.body;
+        Fuse._root     = docEl;
 
         if (Bug('BODY_ACTING_AS_ROOT')) {
-          Fuse._root = Fuse._body;
+          Fuse._root = doc.body;
           Fuse._info.root = Fuse._info.body;
         }
         if (Bug('BODY_SCROLL_COORDS_ON_DOCUMENT_ELEMENT')) {
-          Fuse._scrollEl = Fuse._docEl;
+          Fuse._scrollEl = docEl;
           Fuse._info.scrollEl = Fuse._info.docEl;
         }
 
-        Fuse._doc.loaded = true;
+        decoratedDoc.loaded = true;
         domLoadDispatcher(event);
-        Event.stopObserving(Fuse._doc, 'dom:loaded');
+        decoratedDoc.stopObserving('dom:loaded');
       }
     }
 
     function winLoadWrapper(event) {
       event = event || global.event;
-      if (!Fuse._doc.loaded)
+      if (!Fuse.get(Fuse._doc).loaded)
         domLoadWrapper(event);
       else if (Data['2'] && Data['2'].events['dom:loaded'])
         return setTimeout(function() { winLoadWrapper(event); }, 10);
@@ -575,7 +577,7 @@
     'stopObserving': Func.methodize(['stopObserving', Event])
   });
 
-  _extend(Fuse._doc, {
+  _extend(Document.plugin, {
     'loaded':        false,
     'fire':          Func.methodize(['fire', Event]),
     'observe':       Func.methodize(['observe', Event]),

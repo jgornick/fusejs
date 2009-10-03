@@ -14,15 +14,9 @@
   Fuse.addNS('Dom.Element', Node, {
     'constructor': (function() {
       function Element(tagName, attributes, context) {
-        if (isString(tagName))
-          return Element.create(tagName, attributes, context);
-
-        // bail on XML nodes, document, window objects
-        var element = tagName;
-        return (!element || element.nodeType !== 1 ||
-            element == getWindow(element) || !element.ownerDocument.body)
-          ? element
-          : decorate(element);
+        return isString(tagName)
+          ? Element.create(tagName, attributes, context)
+          : fromElement(tagName);
       }
 
       return Element;
@@ -37,9 +31,7 @@
         while (length--) elements[length] = $(args[length]);
         return elements;
       }
-      if (isString(element))
-        element = doc.getElementById(element || expando);
-      return Element(element);
+      return get(element);
     }
 
     function get(object, context) {
@@ -47,13 +39,22 @@
         if (object.charAt(0) == '<' && object.charAt(object.length - 1) == '>')
           return Element.create(object, context);
         object = (context || doc).getElementById(object || expando);
+        return object && fromElement(object);
       }
-      return Element(object);
+
+      if (!object) return object;
+
+      var nodeType = object.nodeType;
+      if (nodeType === 9) return Document(object);
+
+      // bail on XML nodes, text nodes, and window objects
+      return (nodeType !== 1 || object == getWindow(object) ||
+        !object.ownerDocument.body) ? object : fromElement(object);
     }
 
     function getById(id, context) {
       var element = (context || doc).getElementById(id || expando);
-      return element && decorate(element);
+      return element && fromElement(element);
     }
 
     var doc = Fuse._doc;
@@ -101,12 +102,12 @@
 
           // single element return decorated element
           if (length < 2)
-            result = decorate(fragment.removeChild(fragment.firstChild));
+            result = fromElement(fragment.removeChild(fragment.firstChild));
           // multiple elements return a NodeList
           else {
             result = NodeList();
             while (length--)
-              result[length] = decorate(fragment.removeChild(fragment.lastChild));
+              result[length] = fromElement(fragment.removeChild(fragment.lastChild));
           }
           return result;
         }
@@ -121,7 +122,7 @@
       if (!element)
         element = nodes[tagName] = context.createElement(tagName);
 
-      element = decorate(element.cloneNode(false));
+      element = fromElement(element.cloneNode(false));
       return attributes
         ? element.writeAttribute(attributes)
         : element;
@@ -147,7 +148,7 @@
 
   /*--------------------------------------------------------------------------*/
 
-  decorate =
+  fromElement =
   (function() {
     var TAG_NAME_CLASSES = {
       'A':        'Anchor',
@@ -190,40 +191,32 @@
 
     getFuseId = Node.getFuseId;
 
+    function getOrCreateTagClass(tagName) {
+      var tagClassName = (TAG_NAME_CLASSES[tagName.toUpperCase()] ||
+         capitalize.call(tagName)) + 'Element',
+       tagClass = Dom[tagClassName];
 
-    function Decorator() { }
+      return tagClass || (Dom[tagClassName] = Class(Element, {
+        'constructor': function(element) {
+          return element && (element.raw ?
+            element : fromElement(element));
+        }
+      }));
+    }
 
-    function decorate(element, thisArg) {
+    function fromElement(element) {
       // return if already a decorator
       if (element.raw) return element;
 
-      var decorated, nodeName, tagClass, tagClassName,
+      var decorated, tagClass,
        id = getFuseId(element),
        data = (Data[id] = Data[id] || { });
 
       // return cached if available
-      if (data.decorator)
-        return data.decorator;
+      if (data.decorator) return data.decorator;
 
-      nodeName = getNodeName(element);
-
-      tagClassName = (TAG_NAME_CLASSES[nodeName] ||
-        capitalize.call(nodeName)) + 'Element';
-
-      tagClass = Dom[tagClassName] || (Dom[tagClassName] =
-        Class(Element, {
-          'constructor': function(element) {
-            return element && (element.raw ?
-              element : decorate(element, tagClass));
-          }
-        }));
-
-      // return custom element class if available
-      thisArg = thisArg || Element;
-      if (thisArg === Element)
-        return new tagClass(element);
-
-      Decorator.prototype = thisArg.plugin;
+      Decorator.prototype =
+        getOrCreateTagClass(element.nodeName).plugin;
 
       data.decorator =
       decorated = new Decorator;
@@ -236,34 +229,20 @@
     }
 
     function extendByTag(tagName, statics, plugins, mixins) {
-      var tagClass, tagClassName, i = 0;
-
       if (isArray(tagName)) {
+        var i = 0;
         while (tagName[i])
           extendByTag(tagName[i++], statics, plugins, mixins);
       }
-      else {
-        tagName = tagName.toUpperCase();
-        tagClassName = (TAG_NAME_CLASSES[tagName] ||
-          capitalize.call(tagName)) + 'Element';
-
-        tagClass = Dom[tagClassName] || (Dom[tagClassName] =
-          Class(Element, {
-            'constructor': function(element) {
-              return element && (element.raw ?
-                element : decorate(element, tagClass));
-            }
-          }));
-
-        tagClass.extend(statics, plugins, mixins);
-      }
+      else getOrCreateTagClass(tagName)
+        .extend(statics, plugins, mixins);
     }
 
-    Decorator.plugin = Decorator.prototype;
-    Element.decorate = decorate;
-    Dom.extendByTag  = extendByTag;
+    function Decorator() { }
 
-    return decorate;
+    Element.fromElement = fromElement;
+    Dom.extendByTag = extendByTag;
+    return fromElement;
   })();
 
   /*--------------------------------------------------------------------------*/

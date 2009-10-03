@@ -29,13 +29,6 @@
       return element;
     }
 
-    function returnOffset(left, top) {
-      var result  = Fuse.List(Fuse.Number(left), Fuse.Number(top));
-      result.left = result[0];
-      result.top  = result[1];
-      return result;
-    }
-
     /*------------------------------------------------------------------------*/
 
     plugin.makeAbsolute = function makeAbsolute() {
@@ -260,7 +253,7 @@
        nodeName   = getNodeName(element);
 
       if (nodeName === 'AREA')
-        return decorate(element.parentNode);
+        return fromElement(element.parentNode);
 
       // IE throws an error if the element is not in the document.
       // Many browsers report offsetParent as null if the element's
@@ -275,9 +268,9 @@
         if (OFFSET_PARENT_EXIT_BEFORE_NODES[nodeName]) break;
         if (OFFSET_PARENT_EXIT_ON_NODES[nodeName] ||
             getStyle.call(element, 'position') != 'static')
-          return decorate(element);
+          return fromElement(element);
       }
-      return decorate(getDocument(original).body);
+      return fromElement(getDocument(original).body);
     };
 
     // TODO: overhaul with a thorough solution for finding the correct
@@ -397,7 +390,7 @@
       do {
         valueT += element.offsetTop  || 0;
         valueL += element.offsetLeft || 0;
-        element = decorate(element).getOffsetParent();
+        element = fromElement(element).getOffsetParent();
       } while (element && getNodeName(element.raw) !== 'BODY' &&
           element.getStyle('position') == 'static');
 

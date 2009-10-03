@@ -9,7 +9,7 @@
   Fuse.Util.$F = (function() {
     function $F(element) {
       element = Fuse.get(element);
-      return element.getValue
+      return element && element.getValue
         ? element.getValue()
         : null;
     }
@@ -34,19 +34,17 @@
       if (node = nodes[0]) {
         do {
           FIELD_NODE_NAMES[node.nodeName.toUpperCase()] && callback(node);
-        } while (node = element[i++]);
+        } while (node = nodes[i++]);
       }
     }
 
     plugin.disable = function disable() {
-      var disable = Field.plugin.disable;
-      eachElement(this, function(node) { disable.call(node); });
+      eachElement(this, function(node) { node.disabled = true; });
       return this;
     };
 
     plugin.enable = function enable() {
-      var enable = Field.plugin.enable;
-      eachElement(this, function(node) { enable.call(node); });
+      eachElement(this, function(node) { node.disabled = false; });
       return this;
     };
 
@@ -79,7 +77,7 @@
       if (node = nodes[0]) {
         do {
           FIELD_NODE_NAMES[node.nodeName.toUpperCase()] &&
-            results.push(decorate(node));
+            results.push(fromElement(node));
         } while (node = element[i++]);
       }
       return results;
@@ -93,16 +91,16 @@
        results = Fuse.List(), i = 0;
 
       if (!typeName && !name) {
-        while (input = inputs[i]) results[i++] = new Field(input);
+        while (input = inputs[i]) results[i++] = fromElement(input);
       }
       else if (typeName && !name) {
         while (input = inputs[i++])
-          if (typeName === input.type) results.push(new Field(input));
+          if (typeName === input.type) results.push(fromElement(input));
       }
       else {
         while (input = inputs[i++])
           if ((!typeName || typeName === input.type) && (!name || name === input.name))
-            results.push(new Field(input));
+            results.push(fromElement(input));
       }
       return results;
     };
