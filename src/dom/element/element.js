@@ -6,12 +6,12 @@
     function Fuse(object, context) {
       return Fuse.get(object, context);
     }
-    return Obj.extend(__Fuse.Class({ 'constructor': Fuse }), __Fuse,
+    return Obj.extend(Class({ 'constructor': Fuse }), __Fuse,
       function(value, key, object) { if (hasKey(object, key)) object[key] = value; });
   })(Fuse);
 
   Element =
-  Fuse.addNS('Dom.Element', Node, {
+  Fuse.Dom.Element = Class(Node, {
     'constructor': (function() {
       function Element(tagName, attributes, context) {
         return isString(tagName)
@@ -45,10 +45,10 @@
       if (!object) return object;
 
       var nodeType = object.nodeType;
-      if (nodeType === 9) return Document(object);
+      if (nodeType === DOCUMENT_NODE) return Document(object);
 
       // bail on XML nodes, text nodes, and window objects
-      return (nodeType !== 1 || object == getWindow(object) ||
+      return (nodeType !== ELEMENT_NODE || object == getWindow(object) ||
         !object.ownerDocument.body) ? object : fromElement(object);
     }
 
@@ -183,7 +183,7 @@
       'UL':       'UList'
     },
 
-    Class = Fuse.Class,
+    Decorator = function() { },
 
     Dom = Fuse.Dom,
 
@@ -237,8 +237,6 @@
       else getOrCreateTagClass(tagName)
         .extend(statics, plugins, mixins);
     }
-
-    function Decorator() { }
 
     Element.fromElement = fromElement;
     Dom.extendByTag = extendByTag;
@@ -346,7 +344,7 @@
        context = context || Fuse._body || Fuse._docEl;
        cache = cache || getFragmentCache(context.ownerDocument || context);
        var node = cache.node,
-        nodeName = context.nodeType === 9
+        nodeName = context.nodeType === DOCUMENT_NODE
           ? FROM_STRING_CHILDRENS_PARENT_KEYS[tagName.match(matchTagName)[1].toUpperCase()]
           : getNodeName(context),
 
@@ -522,9 +520,10 @@
         if (isHash(insertions))
           insertions = insertions._object;
 
-        if (isString(insertions) || isNumber(insertions) ||
-            INSERTABLE_NODE_TYPES[(insertions.raw || insertions).nodeType] || insertions.toElement || insertions.toHTML)
-          insertions = { 'bottom': (insertions.raw || insertions) };
+        content = insertions.raw || insertions;
+        if (isString(content) || INSERTABLE_NODE_TYPES[content.nodeType] ||
+            content.toElement || content.toHTML)
+          insertions = { 'bottom': content };
       }
 
       for (position in insertions) {
@@ -704,29 +703,26 @@
       return identify;
     })();
 
-    plugin.isFragment = (function() {
-      var isFragment = function isFragment() {
-        var element = this.raw || this, nodeType = element.nodeType;
-        return nodeType === 11 || (nodeType === 1 && !(element.parentNode &&
-          this.descendantOf(element.ownerDocument)));
+    plugin.isDetached = (function() {
+      var isDetached = function isDetached() {
+        var element = this.raw || this;
+        return !(element.parentNode && this.descendantOf(element.ownerDocument));
       };
 
       if (Feature('ELEMENT_SOURCE_INDEX', 'DOCUMENT_ALL_COLLECTION')) {
-        isFragment = function isFragment() {
-          var element = this.raw || this, nodeType = element.nodeType;
-          return nodeType === 11 || (nodeType === 1 &&
-            element.ownerDocument.all[element.sourceIndex] !== element);
+        isDetached = function isDetached() {
+          var element = this.raw || this;
+          return element.ownerDocument.all[element.sourceIndex] !== element;
         };
       }
       if (Feature('ELEMENT_COMPARE_DOCUMENT_POSITION')) {
-        isFragment = function isFragment() {
+        isDetached = function isDetached() {
           /* DOCUMENT_POSITION_DISCONNECTED = 0x01 */
-          var element = this.raw || this, nodeType = element.nodeType;
-          return nodeType === 11 || (nodeType === 1 &&
-            (element.ownerDocument.compareDocumentPosition(element) & 1) === 1);
+          var element = this.raw || this;
+          return (element.ownerDocument.compareDocumentPosition(element) & 1) === 1;
         };
       }
-      return isFragment;
+      return isDetached;
     })();
 
     plugin.hide = function hide() {
@@ -791,7 +787,7 @@
      empty =              nil,
      hide =               nil,
      getFuseId =          nil,
-     isFragment =         nil,
+     isDetached =         nil,
      remove =             nil,
      scrollTo =           nil,
      show =               nil,

@@ -1,9 +1,12 @@
   /*----------------------------- DOM: DOCUMENT ------------------------------*/
 
-  Document = (function() {
-    var Document = function Document(node) {
+  Document = 
+  Fuse.Dom.Document = (function() {
+    var Decorator = function() { },
+
+    Document = function Document(node) {
       // bail if empty, already decorated, or not a document node
-      if (!node || node.raw || node.nodeType !== 9)
+      if (!node || node.raw || node.nodeType !== DOCUMENT_NODE)
         return node;
 
       var decorated, pluginViewport, viewport,
@@ -30,10 +33,8 @@
       return decorated;
     };
 
-    function Decorator() { }
-    Document = Fuse.addNS('Dom.Document', Node, { 'constructor': Document });
+    Document = Class(Node, { 'constructor': Document });
     Decorator.prototype = Document.plugin;
-
     return Document;
   })();
 

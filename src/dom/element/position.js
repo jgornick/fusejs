@@ -258,7 +258,7 @@
       // IE throws an error if the element is not in the document.
       // Many browsers report offsetParent as null if the element's
       // style is display:none.
-      if (this.isFragment() || element.nodeType === 9 ||
+      if (this.isDetached() || element.nodeType === DOCUMENT_NODE ||
           OFFSET_PARENT_EXIT_BEFORE_NODES[nodeName] ||
           !element.offsetParent && this.getStyle('display') != 'none')
         return null;
@@ -331,7 +331,7 @@
             if (ancestor) return __getOffset(element, ancestor);
 
             var valueT = 0, valueL = 0;
-            if (!this.isFragment()) {
+            if (!this.isDetached()) {
               var doc = getDocument(element),
                info = Fuse._info,
                rect = element.getBoundingClientRect(),
@@ -372,7 +372,7 @@
             break;
         }
         element = element.parentNode;
-      } while (element && element.nodeType === 1);
+      } while (element && element.nodeType === ELEMENT_NODE);
 
       if (onlyAncestors || ((nodeName = getNodeName(original)) &&
           nodeName === 'TEXTAREA' || nodeName === 'INPUT')) {
@@ -413,7 +413,7 @@
         viewportOffset = function viewportOffset() {
           var valueT = 0, valueL = 0;
 
-          if (!this.isFragment()) {
+          if (!this.isDetached()) {
             // IE window's upper-left is at 2,2 (pixels) with respect
             // to the true client when not in quirks mode.
             var element = this.raw || this,

@@ -1,8 +1,9 @@
   /*------------------------------ LANG: CLASS -------------------------------*/
   /* Based on work by Alex Arnell, John Resig, T.J. Crowder and Prototype core */
 
+  Class =
   Fuse.Class = (function() {
-    function subclass() { };
+    function Subclass() { };
 
     function createNamedClass(name) {
       return new Function('', [
@@ -23,49 +24,49 @@
     }
 
     function Class() {
-      var klass, parent, plugin, props, i = 0,
+      var Klass, Parent, plugin, props, i = 0,
        properties = slice.call(arguments, 0),
        first = properties[0];
 
       if (isString(first))
-        parent = createNamedClass(properties.shift());
+        Parent = createNamedClass(properties.shift());
       else if (typeof first === 'function')
-        parent = properties.shift();
+        Parent = properties.shift();
 
       // search properties for a custom `constructor` method
       while (props = properties[i++]) {
         if (hasKey(props, 'constructor')) {
           if (typeof props.constructor === 'function')
-            klass = props.constructor;
+            Klass = props.constructor;
           else if (isString(props.constructor))
-            klass = createNamedClass(props.constructor);
+            Klass = createNamedClass(props.constructor);
           delete props.constructor;
         }
       }
 
-      klass = klass || createNamedClass('UnnamedClass');
+      Klass = Klass || createNamedClass('UnnamedClass');
 
-      if (parent) {
+      if (Parent) {
         // note: Safari 2, inheritance won't work with subclass = new Function;
-        subclass.prototype = parent.prototype;
-        klass.prototype = new subclass;
-        parent.subclasses.push(klass);
+        Subclass.prototype = Parent.prototype;
+        Klass.prototype = new Subclass;
+        Parent.subclasses.push(Klass);
       }
 
-      // add static methods/properties to the klass
-      plugin = klass.plugin = klass.prototype;
-      Obj.extend(klass, Fuse.Class.Methods);
+      // add static methods/properties to the Klass
+      plugin = Klass.plugin = Klass.prototype;
+      Obj.extend(Klass, Class.Methods);
 
-      klass.callSuper  = createCallSuper(plugin);
-      klass.subclasses = Fuse.List();
-      klass.superclass = parent;
+      Klass.callSuper  = createCallSuper(plugin);
+      Klass.subclasses = Fuse.List();
+      Klass.superclass = Parent;
 
-      // add methods to klass.plugin
+      // add methods to Klass.plugin
       i = 0;
-      while (props = properties[i++]) klass.extend(props);
+      while (props = properties[i++]) Klass.extend(props);
 
-      plugin.constructor = klass;
-      return klass;
+      plugin.constructor = Klass;
+      return Klass;
     }
 
     return Class;
@@ -73,16 +74,18 @@
 
   /*--------------------------------------------------------------------------*/
 
+  Class.Methods = { };
+
   (function(methods) {
     methods.extend = function extend() {
       var i, otherMethod,
        args      = arguments,
        argLength = args.length,
 
-       klass      = this,
-       prototype  = klass.prototype,
-       superProto = klass.superclass && klass.superclass.prototype,
-       subclasses = klass.subclasses,
+       Klass      = this,
+       prototype  = Klass.prototype,
+       superProto = Klass.superclass && Klass.superclass.prototype,
+       subclasses = Klass.subclasses,
        subLength  = subclasses.length,
 
        statics = argLength > 1 ? args[0] : null,
@@ -90,7 +93,7 @@
        mixins  = argLength > 2 ? args[2] : null;
 
       if (statics)
-        eachKey(statics, function(method, key) { klass[key] = method; });
+        eachKey(statics, function(method, key) { Klass[key] = method; });
 
       if (mixins)
         eachKey(mixins, function(method, key) { prototype[key] = method; });
@@ -99,13 +102,13 @@
         eachKey(plugins, function(method, key) {
           var protoMethod = prototype[key],
            superMethod = superProto && superProto[key];
-  
+
           // avoid typeof === `function` because Safari 3.1+ mistakes
           // regexp instances as typeof `function`
           if (isFunction(method)) {
             if (isFunction(superMethod))
               method.$super = superMethod;
-  
+
             if (isFunction(protoMethod)) {
               i = subLength;
               while (i--) {
@@ -118,30 +121,27 @@
           prototype[key] = method;
         });
 
-      return klass;
+      return Klass;
     };
 
     // prevent JScript bug with named function expressions
     var extend = nil;
-  })(Fuse.Class.Methods = { });
+  })(Class.Methods);
 
   /*--------------------------------------------------------------------------*/
 
-  // replace placeholder objects with inheritable classes
-  global.Fuse = Fuse.Class({ 'constructor': Fuse });
-  Fuse.prototype = Fuse.plugin = Obj.plugin;
+  // replace placeholder objects with inheritable namespaces
+  global.Fuse = Class({ 'constructor': Fuse });
 
-  Fuse.Env = _extend(Fuse.Class(Fuse,
-    { 'constructor': 'Env' }), Fuse.Env);
+  (function(__Env) {
+    delete Fuse.Env;
+    var Env = Fuse.addNS('Env');
 
-  Fuse.Env.Agent = _extend(Fuse.Class(Fuse.Env,
-    { 'constructor': 'Agent' }), Fuse.Env.Agent);
+    Env.addNS('Agent');
+    Env.addNS('Bug');
+    Env.addNS('Feature');
 
-  Fuse.Env.Bug = Fuse.Class(Fuse.Env, { 'constructor': Bug });
-
-  Fuse.Env.Feature = Fuse.Class(Fuse.Env, { 'constructor': Feature });
-
-  Fuse.Class = Fuse.Class(Fuse, { 'constructor': Fuse.Class });
-
-  Fuse.Fusebox = Fuse.Class(Fuse,
-    { 'constructor': Fuse.Fusebox }, Fuse.Fusebox.prototype);
+    _extend(Env.Agent,   __Env.Agent);
+    _extend(Env.Bug,     __Env.Bug);
+    _extend(Env.Feature, __Env.Feature);
+  })(Fuse.Env);

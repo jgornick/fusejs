@@ -1,7 +1,10 @@
   /*------------------------------- DOM: NODE --------------------------------*/
 
-  Node = (function() {
-    var Node = function Node(node) {
+  Node =
+  Fuse.Dom.Node = (function() {
+    var Decorator = function() { },
+
+    Node = function Node(node) {
       // return if already decoratored or falsy
       if (!node || node.raw) return node;
 
@@ -27,16 +30,16 @@
       return decorated;
     };
 
-    function Decorator() { }
-    Node = Fuse.addNS('Dom.Node', { 'constructor': Node });
+    Node = Class(Fuse.Dom, { 'constructor': Node });
     Decorator.prototype = Node.plugin;
-
     return Node;
   })();
 
   // Node constants
   Node.extend({
-    'ELEMENT_NODE':                1,
+    'DOCUMENT_FRAGMENT_NODE':      DOCUMENT_FRAGMENT_NODE,
+    'DOCUMENT_NODE':               DOCUMENT_NODE,
+    'ELEMENT_NODE':                ELEMENT_NODE,
     'ATTRIBUTE_NODE':              2,
     'TEXT_NODE':                   3,
     'CDATA_SECTION_NODE':          4,
@@ -44,9 +47,7 @@
     'ENTITY_NODE':                 6,
     'PROCESSING_INSTRUCTION_NODE': 7,
     'COMMENT_NODE':                8,
-    'DOCUMENT_NODE':               9,
     'DOCUMENT_TYPE_NODE':          10,
-    'DOCUMENT_FRAGMENT_NODE':      11,
     'NOTATION_NODE':               12
   }, null);
 
@@ -73,7 +74,7 @@
         if (node == global) return 1;
         return getFuseId(win.frameElement) + '-1';
       }
-      else if (node.nodeType === 9) {
+      else if (node.nodeType === DOCUMENT_NODE) {
         if (node === Fuse._doc) return 2;
         return getFuseId(win.frameElement) + '-2';
       }

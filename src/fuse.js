@@ -2,13 +2,14 @@
 (function(global) {
 
   // private vars
-  var Fuse, Bug, Data, Document, Element, Enumerable, Feature, Form, Func, Obj,
-   Node, NodeList, $break, _extend, addListMethods, bind, capitalize, clone,
-   concatList, defer, eachKey, emptyFunction, escapeRegExpChars, expando,
-   fromElement, getDocument, getNodeName, getWindow, hasKey, inspect, isArray,
-   isElement, isEmpty, isHash, isHostObject, isFunction, isNumber, isPrimitive,
-   isRegExp, isSameOrigin, isString, isUndefined, K, nil, prependList,
-   returnOffset, slice, toInteger, toString, undef, userAgent;
+  var DOCUMENT_FRAGMENT_NODE, DOCUMENT_NODE, ELEMENT_NODE, Fuse, Bug, Class,
+   Data, Document, Element, Enumerable, Feature, Form, Func, Obj, Node, NodeList,
+   $break, _extend, addListMethods, bind, capitalize, clone, concatList, defer,
+   eachKey, emptyFunction, escapeRegExpChars, expando,fromElement, getDocument,
+   getNodeName, getWindow, hasKey, inspect, isArray, isElement, isEmpty, isHash,
+   isHostObject, isFunction, isNumber, isPrimitive, isRegExp, isSameOrigin,
+   isString, isUndefined, K, nil, prependList, returnOffset, slice, toInteger,
+   toString, undef, userAgent;
 
   Fuse =
   global.Fuse = function Fuse() { };
@@ -82,6 +83,15 @@
     };
   })();
 
+  // global.document.createDocumentFragment() nodeType
+  DOCUMENT_FRAGMENT_NODE = 11;
+
+  // global.document nodeType
+  DOCUMENT_NODE = 9;
+
+  // element nodeType
+  ELEMENT_NODE = 1;
+
   // a unqiue 15 char id used throughout Fuse
   expando = '_fuse' + String(+new Date).slice(0, 10);
 
@@ -99,32 +109,29 @@
 
   /*--------------------------------------------------------------------------*/
 
-  Fuse.addNS = (function() {
+  Fuse.addNS = 
+  Fuse.prototype.addNS = (function() {
     function addNS(path) {
-      var part, i = 0,
+      var Klass, Parent, key,
+       i          = 0,
        object     = this,
-       propIndex  = 0,
-       parts      = path.split('.'),
-       length     = parts.length,
+       keys       = path.split('.'),
+       length     = keys.length,
        properties = slice.call(arguments, 1);
 
-      // if parent is passed then incriment the propIndex by 1
-      if (typeof properties[0] === 'function') propIndex++;
-      properties[propIndex] = properties[propIndex] || { };
+      if (typeof properties[0] === 'function')
+        Parent = properties.shift();
 
-      while (part = parts[i++]) {
-        if (object[part]) {
-          object = object[part];
-        } else {
+      while (key = keys[i++]) {
+        if (!object[key]) {
           if (i === length) {
-            // if no parent pass prepend object as parent
-            if (!propIndex) properties = prependList(properties, object);
-            object = object[part] = Fuse.Class.apply(global,
-              hasKey(properties[1], 'constructor') ? properties :
-                (properties[1].constructor = part) && properties);
+            if (!hasKey(properties, 'constructor')) properties.constructor = key;
+            Klass = Class(Parent || object, properties);
           }
-          else object = object[part] = Fuse.Class(object, { 'constructor': part });
+          else Klass = Class(object, { 'constructor': key });
+          object = object[key] = new Klass;
         }
+        else object = object[key];
       }
       return object;
     }
@@ -155,7 +162,6 @@
 
    'dom/dom.js',
    'dom/features.js',
-   'dom/data.js',
    'dom/node.js',
    'dom/document.js',
 

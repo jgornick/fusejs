@@ -1,3 +1,17 @@
+* Remove `this instanceof` usage from FuseJS. [jddalton]
+
+* Rename Fuse.Ajax.getTransport to Fuse.Ajax.create and Fuse.Ajax.Request#transport to Fuse.Ajax.Request#raw. [jddalton]
+  Note: Backwards compatibility warning.
+
+* Make all namespaces inheritable. [jddalton]
+  Example: Fuse.plugin.addNS = ...; Fuse.Dom.addNS('Data');
+
+* Rename Fuse.Dom.Element#isFragment to Fuse.Dom.Element#isDetached. [jddalton]
+
+* Add nodeType constants DOCUMENT_FRAGMENT_NODE, DOCUMENT_NODE, and ELEMENT_NODE. [jddalton, kangax]
+
+* Change all `foo.indexOf(blah) === -1` to `foo.indexOf(blah) < 0`. [Andrea Giammarchi, jddalton]
+
 * Rename Fuse.Dom.Element.decorate to Fuse.Dom.Element.fromElement to be consistent with the rest of the API. [jddalton]
 
 * Add Fuse.Dom.Document class and support for Fuse.get(document). [jddalton]
