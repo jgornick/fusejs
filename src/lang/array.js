@@ -177,7 +177,7 @@
         }
         else if (typeof callback === 'function') {
           for ( ; i < length; i++)
-            if (callback.call(thisArg, object[i], i))
+            if (callback.call(thisArg, object[i], i, object))
               return object[i];
         }
         else {
