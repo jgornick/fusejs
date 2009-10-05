@@ -681,7 +681,7 @@
     };
 
     plugin.isEmpty = function isEmpty() {
-      return Fuse.String((this.raw || this).innerHTML).blank();
+      return Fuse.String((this.raw || this).innerHTML).isBlank();
     };
 
     plugin.identify = (function() {

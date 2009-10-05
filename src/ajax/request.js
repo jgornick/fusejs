@@ -281,7 +281,7 @@
           if (responseXML) this.responseXML = responseXML;
 
           // set responseJSON
-          if (evalJSON == 'force' || (evalJSON && !responseText.blank() &&
+          if (evalJSON == 'force' || (evalJSON && !responseText.isBlank() &&
               contentType.indexOf('application/json') > -1)) {
             try {
               this.responseJSON = responseText.evalJSON(options.sanitizeJSON ||

@@ -197,19 +197,20 @@
 
   (function(plugin) {
 
-    var matchBlank      = Fuse.RegExp('^\\s*$'),
-     matchCapped        = /([A-Z]+)([A-Z][a-z])/g,
-     matchCamelCases    = /([a-z\d])([A-Z])/g,
-     matchDoubleColons  = /::/g,
-     matchHTMLComments  = Fuse.RegExp('<!--\\s*' + Fuse.scriptFragment + '\\s*-->', 'gi'),
-     matchHyphens       = /-/g,
-     matchHyphenated    = /-+(.)?/g,
-     matchOpenScriptTag = /<script/i,
-     matchScripts       = new RegExp(Fuse.scriptFragment, 'gi'),
-     matchUnderscores   = /_/g,
-     replace            = plugin.replace;
+    var matchBlank        = Fuse.RegExp('^\\s*$'),
+     matchCapped          = /([A-Z]+)([A-Z][a-z])/g,
+     matchCamelCases      = /([a-z\d])([A-Z])/g,
+     matchDoubleColons    = /::/g,
+     matchHTMLComments    = Fuse.RegExp('<!--\\s*' + Fuse.scriptFragment + '\\s*-->', 'gi'),
+     matchHyphens         = /-/g,
+     matchHyphenated      = /-+(.)?/g,
+     matchOpenScriptTag   = /<script/i,
+     matchScripts         = new RegExp(Fuse.scriptFragment, 'gi'),
+     matchUnderscores     = /_/g,
+     matchWordFirstLetter = /^(.)|\s(.)/g,
+     replace              = plugin.replace;
 
-    plugin.blank = function blank() {
+    plugin.isBlank = function isBlank() {
       if (this == null) throw new TypeError;
       return matchBlank.test(this);
     };
@@ -233,12 +234,22 @@
     // set private reference
     capitalize =
     plugin.capitalize = (function() {
-      function capitalize() {
+      function toUpperCase(match) {
+        return match.toUpperCase();
+      }
+            
+      function capitalize(words) {
         if (this == null) throw new TypeError;
-        var string = String(this), expandoKey = expando + string;
-        return cache[expandoKey] ||
-          (cache[expandoKey] = Fuse.String(string.charAt(0).toUpperCase() +
-            string.slice(1).toLowerCase()));
+        var string = String(this);
+        if (words) {
+          string = Fuse.String(string.replace(matchWordFirstLetter, toUpperCase));
+          expandoKey = expando + string;
+        } else {
+          string = Fuse.String(string.charAt(0).toUpperCase() + 
+            string.slice(1).toLowerCase());
+          expandoKey = expando + string;       
+        }
+        return cache[expandoKey] || (cache[expandoKey] = string);        
       }
 
       var cache = { };
@@ -248,11 +259,6 @@
     plugin.contains = function contains(pattern) {
       if (this == null) throw new TypeError;
       return String(this).indexOf(pattern) > -1;
-    };
-
-    plugin.empty = function empty() {
-      if (this == null) throw new TypeError;
-      return !String(this).length;
     };
 
     plugin.endsWith = function endsWith(pattern) {
@@ -294,10 +300,56 @@
       return results;
     };
 
+    plugin.first = function first(callback, thisArg) {
+      if (this == null) throw new TypeError;
+      var i = 0, length = this.length >>> 0;
+
+      if (callback == null) {
+        for ( ; i < length; i++)
+          if (i in this) return this[i];
+      }
+      else if (typeof callback === 'function') {
+        for ( ; i < length; i++)
+          if (callback.call(thisArg, this[i], i, this))
+            return this[i];
+      }
+      else {
+        var count = +callback; // fast coerce to number
+        if (isNaN(count)) return String();
+        count = count < 1 ? 1 : count > length ? length : count;
+        return plugin.slice.call(this, 0, count);
+      }
+    };
+
     plugin.hyphenate = function hyphenate() {
       if (this == null) throw new TypeError;
       matchUnderscores.lastIndex = 0;
       return Fuse.String(String(this).replace(matchUnderscores, '-'));
+    };
+
+    plugin.isEmpty = function isEmpty() {
+      if (this == null) throw new TypeError;
+      return !String(this).length;
+    };
+
+    plugin.last = function last(callback, thisArg) {
+      if (this == null) throw new TypeError;
+      var length = this.length >>> 0;
+
+      if (callback == null)
+        return this[length && length - 1];
+      if (typeof callback === 'function') {
+        while (length--)
+          if (callback.call(thisArg, this[length], length, this))
+            return this[length];
+      }
+      else {
+        var results = String(), count = +callback;
+        if (isNaN(count)) return results;
+
+        count = count < 1 ? 1 : count > length ? length : count;
+        return plugin.slice.call(this, length - count);
+      }
     };
 
     plugin.startsWith = function startsWith(pattern) {
@@ -313,23 +365,23 @@
       return Fuse.String(String(this).replace(matchScripts, ''));
     };
 
-    plugin.times = (function() {
-      function __times(string, count) {
+    plugin.repeat = (function() {
+      function __repeat(string, count) {
         // Based on work by Yaffle and Dr. J.R.Stockton.
         // Uses the `Exponentiation by squaring` algorithm. 
         // http://www.merlyn.demon.co.uk/js-misc0.htm#MLS
         if (count < 1) return '';
-        if (count % 2) return __times(string, count - 1) + string;
-        var half = __times(string, count / 2);
+        if (count % 2) return __repeat(string, count - 1) + string;
+        var half = __repeat(string, count / 2);
         return half + half;
       }
 
-      function times(count) {
+      function repeat(count) {
         if (this == null) throw new TypeError;
-        return Fuse.String(__times(String(this), toInteger(count)));
+        return Fuse.String(__repeat(String(this), toInteger(count)));
       }
 
-      return times;
+      return repeat;
     })();
 
     plugin.toArray = function toArray() {
@@ -409,13 +461,15 @@
     plugin.parseQuery = plugin.toQueryParams;
 
     // prevent JScript bug with named function expressions
-    var blank =        nil,
+    var isBlank =      nil,
       contains =       nil,
-      empty =          nil,
       endsWith =       nil,
       evalScripts =    nil,
       extractScripts = nil,
+      first =          nil,
       hyphenate =      nil,
+      isEmpty =        nil,
+      last =           nil,
       startsWith =     nil,
       stripScripts =   nil,
       toArray =        nil,
