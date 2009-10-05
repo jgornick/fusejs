@@ -109,7 +109,7 @@
       options = clone(options);
 
       var params = options.parameters, submit = options.submit,
-       action = this.readAttribute('action');
+       action = this.getAttribute('action');
 
       delete options.submit;
       options.parameters = this.serialize({ 'submit':submit, 'hash':true });

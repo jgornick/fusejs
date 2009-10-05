@@ -38,7 +38,7 @@
          elemStyle = element.style,
          width     = this.getWidth('content'),
          height    = this.getHeight('content'),
-         offsets   = this.positionedOffset(),
+         offsets   = this.getPositionedOffset(),
          before    = this.getDimensions(),
          backup    = Data[element.getFuseId()].madeAbsolute = {
            'position':   elemStyle.position,
@@ -215,16 +215,16 @@
 
         // if an absolute element is a descendant of the source then
         // calculate its offset to the source and inverse it
-        if (elemPos == 'absolute' && this.descendantOf(source)) {
-          coord = this.cumulativeOffset(source);
+        if (elemPos == 'absolute' && source.contains(this)) {
+          coord = this.getCumulativeOffset(source);
           coord.left *= -1;
           coord.top  *= -1;
         }
         else {
-          coord = source.cumulativeOffset();
+          coord = source.getCumulativeOffset();
           if (elemPos == 'relative') {
             // subtract the relative element's offset from the source's offsets
-            elemOffset  = element.cumulativeOffset();
+            elemOffset  = element.getCumulativeOffset();
             coord.left -= elemOffset.left;
             coord.top  -= elemOffset.top;
           }
@@ -275,7 +275,7 @@
 
     // TODO: overhaul with a thorough solution for finding the correct
     // offsetLeft and offsetTop values
-    plugin.cumulativeOffset = (function() {
+    plugin.getCumulativeOffset = (function() {
       function getOffset(ancestor) {
         var offsetParent, position, valueT = 0, valueL = 0;
 
@@ -306,7 +306,7 @@
         return returnOffset(valueL, valueT);
       }
 
-      function cumulativeOffset(ancestor) {
+      function getCumulativeOffset(ancestor) {
         ancestor = fromElement(ancestor);
 
         var element = ensureLayout(this);
@@ -347,10 +347,10 @@
           };
         })(getOffset);
       }
-      return cumulativeOffset;
+      return getCumulativeOffset;
     })();
 
-    plugin.cumulativeScrollOffset = function cumulativeScrollOffset(onlyAncestors) {
+    plugin.getCumulativeScrollOffset = function getCumulativeScrollOffset(onlyAncestors) {
       var nodeName,
        valueT   = 0,
        valueL   = 0,
@@ -383,7 +383,7 @@
       return returnOffset(valueL, valueT);
     };
 
-    plugin.positionedOffset = function positionedOffset() {
+    plugin.getPositionedOffset = function getPositionedOffset() {
       var element = ensureLayout(this),
        valueT = 0, valueL = 0;
 
@@ -397,10 +397,10 @@
       return returnOffset(valueL, valueT);
     },
 
-    plugin.viewportOffset = (function() {
-      var viewportOffset = function viewportOffset() {
-        var scrollOffset = this.cumulativeScrollOffset(/*onlyAncestors*/ true),
-         cumulativeOffset = this.cumulativeOffset(),
+    plugin.getViewportOffset = (function() {
+      var getViewportOffset = function getViewportOffset() {
+        var scrollOffset = this.getCumulativeScrollOffset(/*onlyAncestors*/ true),
+         cumulativeOffset = this.getCumulativeOffset(),
          valueT = cumulativeOffset.top, valueL = cumulativeOffset.left;
 
         // subtract the the scrollOffset totals from the element offset totals.
@@ -410,7 +410,7 @@
       };
 
       if (Feature('ELEMENT_BOUNDING_CLIENT_RECT')) {
-        viewportOffset = function viewportOffset() {
+        getViewportOffset = function getViewportOffset() {
           var valueT = 0, valueL = 0;
 
           if (!this.isDetached()) {
@@ -428,18 +428,40 @@
         };
       }
 
-      return viewportOffset;
+      return getViewportOffset;
     })();
-
+    
+    plugin.getOffset = (function() {
+      var PRESETS = {
+        'cumulative':       'getCumulativeOffset',
+        'cumulativescroll': 'getCumulativeScrollOffset',
+        'positioned':       'getPositionedOffset',
+        'viewport':         'getViewportOffset'
+      };
+      
+      var getOffset = function getOffset(preset, ancestor) {
+        if (!preset)
+          return this.getPositionedOffset();
+        else {
+          preset = Fuse.String(preset).camelize().toLowerCase();
+          if (PRESETS[preset]) 
+            return this[PRESETS[preset]](ancestor);
+        }
+        return null;
+      };
+      
+      return getOffset;      
+    })();
+    
     // prevent JScript bug with named function expressions
-    var makeAbsolute =        nil,
-     clonePosition =          nil,
-     cumulativeScrollOffset = nil,
-     getOffsetParent =        nil,
-     makeClipping =           nil,
-     makePositioned =         nil,
-     positionedOffset =       nil,
-     undoAbsolute =           nil,
-     undoClipping =           nil,
-     undoPositioned =         nil;
+    var makeAbsolute =            nil,
+     clonePosition =              nil,
+     getCumulativeScrollOffset =  nil,
+     getOffsetParent =            nil,
+     makeClipping =               nil,
+     makePositioned =             nil,
+     getPositionedOffset =        nil,
+     undoAbsolute =               nil,
+     undoClipping =               nil,
+     undoPositioned =             nil;
   })(Element.plugin);

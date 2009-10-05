@@ -220,7 +220,7 @@
       return this;
     };
 
-    plugin.classNames = function classNames() {
+    plugin.getClassNames = function getClassNames() {
       var cn = (this.raw || this).className;
       return cn ? Fuse.String(cn).split(' ') : Fuse.List();
     };
@@ -255,7 +255,7 @@
 
     // prevent JScript bug with named function expressions
     var addClassName = nil,
-     classNames =      nil,
+     getClassNames =   nil,
      hasClassName =    nil,
      removeClassName = nil,
      toggleClassName = nil;

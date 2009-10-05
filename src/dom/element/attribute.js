@@ -26,7 +26,7 @@
       return hasAttribute;
     })();
 
-    plugin.readAttribute = function readAttribute(name) {
+    plugin.getAttribute = function getAttribute(name) {
       var result, element = this.raw || this, T = Element.Attribute;
       name = T.names[name] || name;
 
@@ -36,7 +36,7 @@
       return Fuse.String(result || '');
     };
 
-    plugin.writeAttribute = function writeAttribute(name, value) {
+    plugin.setAttribute = function setAttribute(name, value) {
       var node, contentName, attr,
        element = this.raw || this, attributes = { }, T = Element.Attribute;
 
@@ -64,9 +64,17 @@
       }
       return this;
     };
+    
+    plugin.removeAttribute = function removeAttribute(name) {
+      var element = this.raw || this, T = Element.Attribute;
+      name = T.names[name] || name;
+
+      element.removeAttribute(name);
+      return this;
+    };
 
     // prevent JScript bug with named function expressions
-    var readAttribute = nil, writeAttribute = nil;
+    var getAttribute = nil, setAttribute = nil, removeAttribute = nil;
   })(Element.plugin);
 
 

@@ -124,7 +124,7 @@
 
       element = fromElement(element.cloneNode(false));
       return attributes
-        ? element.writeAttribute(attributes)
+        ? element.setAttribute(attributes)
         : element;
     };
 
@@ -680,7 +680,7 @@
       return this;
     };
 
-    plugin.empty = function empty() {
+    plugin.isEmpty = function isEmpty() {
       return Fuse.String((this.raw || this).innerHTML).blank();
     };
 
@@ -688,13 +688,13 @@
       function identify() {
         // use readAttribute to avoid issues with form elements and
         // child controls with ids/names of "id"
-        var element = this.raw || this, id = this.readAttribute('id');
+        var element = this.raw || this, id = this.getAttribute('id');
         if (id.length) return id;
 
         var ownerDoc = element.ownerDocument;
         do { id = 'anonymous_element_' + counter++; }
         while (ownerDoc.getElementById(id));
-        this.writeAttribute('id', id);
+        this.setAttribute('id', id);
         return Fuse.String(id);
       }
 
@@ -750,7 +750,7 @@
     };
 
     plugin.scrollTo = function scrollTo() {
-      var pos = this.cumulativeOffset();
+      var pos = this.getCumulativeOffset();
       global.scrollTo(pos[0], pos[1]);
       return this;
     };
@@ -772,7 +772,7 @@
       if (isString(wrapper))
         wrapper = Element.create(wrapper, attributes);
       if (isElement(wrapper = wrapper.raw || Fuse.get(wrapper)))
-        wrapper.writeAttribute(attributes);
+        wrapper.setAttribute(attributes);
       else wrapper = Element.create('div', wrapper);
 
       wrapper = wrapper.raw;
@@ -784,7 +784,7 @@
 
     // prevent JScript bug with named function expressions
     var cleanWhitespace = nil,
-     empty =              nil,
+     isEmpty =            nil,
      hide =               nil,
      getFuseId =          nil,
      isDetached =         nil,

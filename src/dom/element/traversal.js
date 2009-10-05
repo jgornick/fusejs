@@ -4,33 +4,36 @@
 
     // support W3C ElementTraversal interface
     var firstNode = 'firstChild',
+     lastNode     = 'lastChild',
      nextNode     = 'nextSibling',
      prevNode     = 'previousSibling',
      firstElement = 'firstElementChild',
+     lastElement  = 'lastElementChild',
      nextElement  = 'nextElementSibling',
      prevElement  = 'previousElementSibling';
 
     if (isHostObject(Fuse._docEl, nextElement) &&
         isHostObject(Fuse._docEl, prevElement)) {
       firstNode = firstElement;
+      lastNode  = lastElement;
       nextNode  = nextElement;
       prevNode  = prevElement;
     }
 
     (function() {
-      plugin.childElements = function childElements(selectors) {
-        var nextSiblings, element = this.raw || this;
+      plugin.getChildren = function getChildren(selectors) {
+        var getNextSiblings, element = this.raw || this;
         if (!element[firstNode]) return NodeList();
 
         while (element && element.nodeType !== ELEMENT_NODE)
           element = element[nextNode];
         if (!element) return NodeList();
 
-        nextSiblings = this.nextSiblings;
+        getNextSiblings = this.getNextSiblings;
         return !selectors || !selectors.length ||
             selectors && Selector.match(this, selectors)
-          ? prependList(nextSiblings.call(element, selectors), this, NodeList())
-          : nextSiblings.call(element, selectors);
+          ? prependList(getNextSiblings.call(element, selectors), this, NodeList())
+          : getNextSiblings.call(element, selectors);
       };
 
       plugin.match = function match(selectors) {
@@ -43,36 +46,37 @@
         return Selector.select(selectors, this);
       };
 
-      plugin.siblings = function siblings(selectors) {
+      plugin.getSiblings = function getSiblings(selectors) {
         var match, element = this.raw || this, i = 0,
          original = element, results = NodeList();
 
-        if (element = element.parentNode && element.parentNode[firstNode]) {
-          if (selectors && selectors.length) {
-            match = Selector.match;
-            do {
-              if (element.nodeType === ELEMENT_NODE &&
-                  element !== original && match(element, selectors))
-                results[i++] = fromElement(element);
-            } while (element = element[nextNode]);
-          } else {
-            do {
-              if (element.nodeType === ELEMENT_NODE && element !== original)
-                results[i++] = fromElement(element);
-            } while (element = element[nextNode]);
-          }
+        if (element = element.parentNode && element.parentNode[firstNode])
+          return results;
+          
+        if (selectors && selectors.length) {
+          match = Selector.match;
+          do {
+            if (element.nodeType === ELEMENT_NODE &&
+                element !== original && match(element, selectors))
+              results[i++] = fromElement(element);
+          } while (element = element[nextNode]);
+        } else {
+          do {
+            if (element.nodeType === ELEMENT_NODE && element !== original)
+              results[i++] = fromElement(element);
+          } while (element = element[nextNode]);
         }
         return results;
       };
 
       // prevent JScript bug with named function expressions
-      var childElements = nil, match = nil, query = nil, siblings = nil;
+      var getChildren = nil, match = nil, query = nil, getSiblings = nil;
     })();
 
     /*------------------------------------------------------------------------*/
 
-    plugin.descendants = (function() {
-      var descendants = function descendants(selectors) {
+    plugin.getDescendants = (function() {
+      var getDescendants = function getDescendants(selectors) {
         var match, node, i = 0, results = NodeList(),
          nodes = (this.raw || this).getElementsByTagName('*');
 
@@ -87,7 +91,7 @@
       };
 
       if (Bug('GET_ELEMENTS_BY_TAG_NAME_RETURNS_COMMENT_NODES')) {
-        descendants = function descendants(selectors) {
+        getDescendants = function getDescendants(selectors) {
           var match, node, i = 0, results = NodeList(),
            nodes = (this.raw || this).getElementsByTagName('*');
 
@@ -104,193 +108,266 @@
           return results;
         };
       }
-      return descendants;
+      return getDescendants;
     })();
 
-    plugin.descendantOf = (function() {
-      var descendantOf = function descendantOf(ancestor) {
-        ancestor = Fuse.get(ancestor).raw;
+    plugin.contains = (function() {
+      var contains = function contains(descendant) {
+        descendant = Fuse.get(descendant);
+        if (!descendant) return false;
+        descendant = descendant.raw || descendant;
         var element = this.raw || this;
-        while (element = element.parentNode)
-          if (element === ancestor) return true;
+        while (descendant = descendant.parentNode)
+          if (descendant === element) return true;
         return false;
       };
-
+ 
       if (Feature('ELEMENT_COMPARE_DOCUMENT_POSITION')) {
-        descendantOf = function descendantOf(ancestor) {
+        contains = function contains(descendant) {
           /* DOCUMENT_POSITION_CONTAINS = 0x08 */
-          ancestor = Fuse.get(ancestor).raw;
+          descendant = Fuse.get(descendant);
+          if (!descendant) return false;
           var element = this.raw || this;
-          return (element.compareDocumentPosition(ancestor) & 8) === 8;
+          return ((descendant.raw || descendant)
+            .compareDocumentPosition(element) & 8) === 8;
         };
       }
       else if (Feature('ELEMENT_CONTAINS')) {
-        var __descendantOf = descendantOf;
-
-        descendantOf = function descendantOf(ancestor) {
-          ancestor = Fuse.get(ancestor);
-          var element, ancestorElem = ancestor.raw;
-          if (ancestorElem.nodeType !== ELEMENT_NODE)
-            return __descendantOf.call(this, ancestor);
+        var __contains = contains;
+ 
+        contains = function contains(descendant) {
+          descendant = Fuse.get(descendant);
+          if (!descendant) return false;
+          var element, descendantElem = descendant.raw || descendant;
+          if (descendantElem.nodeType !== ELEMENT_NODE)
+            return __contains.call(this, descendant);
           element = this.raw || this;
-          return ancestorElem !== element && ancestorElem.contains(element);
+          return element !== descendantElem && element.contains(descendantElem);
         };
       }
-      return descendantOf;
+      return contains;
     })();
 
     plugin.down = (function() {
-      function getNth(nodes, index) {
-        var count = 0, i = 0;
-        while (node = nodes[i++])
-          if (count++ === index) return fromElement(node);
-        return null;
+      function get(nodes, count) {
+        var i = 0, x = 0, results = NodeList();
+        if (count < 2)
+          while (node = nodes[i++])
+            return fromElement(node);
+        else
+          while (node = nodes[i++])
+            if (x < count)
+              results[x++] = fromElement(node);
+        return count < 2 ? null : results;
       }
 
-      function getNthBySelector(nodes, selectors, index) {
-        var count = 0, i = 0, match = Selector.match;
-        while (node = nodes[i++])
-          if (match(node, selectors) && count++ === index)
-            return fromElement(node);
-        return null;
+      function getBySelector(nodes, selectors, count) {
+        var i = 0, x = 0, results = NodeList(), match = Selector.match;
+        if (count < 2)
+          while (node = nodes[i++])
+            if (match(node, selectors)) 
+              return fromElement(node);
+        else
+          while (node = nodes[i++])
+            if (x < count && match(node, selectors))
+              results[x++] = fromElement(node);
+        return count < 2 ? null : results;
       }
+      
+      function getByCallback(nodes, callback, thisArg) {
+        var i = 0;
+        while (node = nodes[i++]) {
+          var element = fromElement(node);
+          if (callback.call(thisArg, element)) 
+            return element;
+        }
+        return null;
+      }      
 
       if (Bug('GET_ELEMENTS_BY_TAG_NAME_RETURNS_COMMENT_NODES')) {
-        getNth = function(nodes, index) {
-          var count = 0, i = 0;
-          while (node = nodes[i++])
-            if (node.nodeType === ELEMENT_NODE && count++ === index)
-              return fromElement(node);
-          return null;
+        get = function(nodes, count) {
+          var i = 0, x = 0, results = NodeList();
+          if (count < 2)
+            while (node = nodes[i++])
+              if (node.nodeType === ELEMENT_NODE)
+                return fromElement(node);
+          else
+            while (node = nodes[i++])
+              if (x < count && node.nodeType === ELEMENT_NODE)
+                results[x++] = fromElement(node);
+          return count < 2 ? null : results;
         };
 
-        getNthBySelector = function(nodes, selectors, index) {
-          var count = 0, i = 0, match = Selector.match;
-          while (node = nodes[i++])
-            if (node.nodeType === ELEMENT_NODE &&
-                match(node, selectors) && count++ === index)
-              return fromElement(node);
-          return null;
+        getBySelector = function(nodes, selectors, count) {
+          var i = 0, x = 0, results = NodeList(), match = Selector.match;
+          if (count < 2)
+            while (node = nodes[i++])
+              if (node.nodeType === ELEMENT_NODE && match(node, selectors))
+                return fromElement(node);
+          else
+            while (node = nodes[i++])
+              if (x < count && node.nodeType === ELEMENT_NODE && match(node, selectors))
+                results[x++] = fromElement(node);
+          return count < 2 ? null : results;          
         };
+        
+        getByCallback = function getByCallback(nodes, callback, thisArg) {
+          var i = 0;
+          while (node = nodes[i++]) {
+            var element = fromElement(node);
+            if (node.nodeType === ELEMENT_NODE && callback.call(thisArg, element)) 
+              return element;
+          }
+          return null;
+        }          
       }
 
-      function down(selectors, index) {
+      function down(selectors, count) {
         if (selectors == null)
-          return this.firstDescendant();
+          return this.first();
 
         if (isNumber(selectors)) {
-          index = selectors; selectors = null;
-        } else index = index || 0;
-
+          count = selectors < 1 ? 1 : selectors;
+          selectors = null;
+        } else if (isNumber(count)) {
+          count = count < 1 ? 1 : count;
+        } else if (typeof selectors !== 'function') {
+          count = 1;
+        }
+        
         var nodes = (this.raw || this).getElementsByTagName('*');
-        return selectors && selectors.length
-          ? getNthBySelector(nodes, selectors, index)
-          : getNth(nodes, index);
+
+        if (selectors == null)
+          return get(nodes, count);
+        else if (typeof selectors === 'function') {
+          var callback = selectors, thisArg = count;
+          return getByCallback(nodes, callback, thisArg);
+        } else if (selectors && selectors.length)
+          return getBySelector(nodes, selectors, count);
       }
       return down;
     })();
 
-    plugin.firstDescendant = (function() {
-      var firstDescendant = function firstDescendant() {
-        var element = (this.raw || this).firstChild;
-        while (element && element.nodeType !== ELEMENT_NODE)
-          element = element[nextNode];
-        return fromElement(element);
-      };
-
-      if (firstNode === firstElement)
-        firstDescendant = function firstDescendant() {
-          return fromElement((this.raw || this).firstElementChild);
-        };
-
-      return firstDescendant;
-    })();
-
     /*------------------------------------------------------------------------*/
 
     (function() {
-      function getNth(decorator, property, selectors, index) {
-        var match, count = 0,
-         element = decorator.raw || decorator;
+      function get(decorator, property, selectors, count) {
+        var i = 0, match, results, element = decorator.raw || decorator;
 
         if (isNumber(selectors)) {
-          index = selectors; selectors = null;
-        } else index = index || 0;
-
-        if (element = element[property]) {
-          if (selectors && selectors.length) {
-            match = Selector.match;
-            do {
-              if (element.nodeType === ELEMENT_NODE &&
-                  match(element, selectors) && count++ === index)
-                return fromElement(element);
-            } while (element = element[property]);
-          } else {
-            do {
-              if (element.nodeType === ELEMENT_NODE && count++ === index)
-                return fromElement(element);
-            } while (element = element[property]);
-          }
+          count = selectors < 1 ? 1 : selectors; 
+          selectors = null;
+        } else if (isNumber(count)) {
+          count = count < 1 ? 1 : count;
+        } else if (typeof selectors !== 'function') {
+          count = 1;          
         }
-        return null;
-      }
+        
+        results = count > 1 ? NodeList() : null;
 
-      plugin.next = function next(selectors, index) {
-        return getNth(this, nextNode, selectors, index);
+        if (!(element = element[property])) return results;
+        
+        // Handle no arguments
+        if (selectors == null && count < 2) {
+          do {
+            if (element.nodeType === 1)
+              return fromElement(element);
+          } while (element = element[property]);          
+        } else if (typeof selectors === 'function') {
+          // Handle when a callback and optional thisArg is passed in
+          do {
+            var el = fromElement(element), callback = selectors, thisArg = count;
+            if (element.nodeType === 1 && callback.call(thisArg, el))
+              return el;
+          } while (element = element[property]);
+        } else if (selectors && selectors.length) {
+          // Handle when selectors has been specified
+          match = Selector.match;
+          // Handle when we only need to return the first element
+          if (count < 2) {
+            do {
+              if (element.nodeType === ELEMENT_NODE && match(element, selectors))
+                return fromElement(element);
+            } while (element = element[property]);            
+          } else {
+            // Handle when we need to return a specified amount of elements
+            do {
+              if (i < count && element.nodeType === ELEMENT_NODE && match(element, selectors))
+                results[i++] = fromElement(element);
+            } while (element = element[property]);            
+          }
+        } else {
+          // Handle when count is greater than 1
+          do {
+            if (i < count && element.nodeType === 1)
+              results[i++] = fromElement(element);             
+          } while (element = element[property]);            
+        }
+        return results;
+      }      
+
+      plugin.next = function next(selectors, count) {
+        return get(this, nextNode, selectors, count);
       };
 
-      plugin.previous = function previous(selectors, index) {
-        return getNth(this, prevNode, selectors, index);
+      plugin.previous = function previous(selectors, count) {
+        return get(this, prevNode, selectors, count);
       };
 
-      plugin.up = function up(selectors, index) {
-        return selectors == null
-          ? fromElement((this.raw || this).parentNode)
-          : getNth(this, 'parentNode', selectors, index);
+      plugin.up = function up(selectors, count) {
+        return get(this, 'parentNode', selectors, count);
+      };
+
+      plugin.first = function first(selectors, count) {
+        return get(fromElement((this.raw || this)[firstNode]), nextNode, selectors, count);
+      };
+      
+      plugin.last = function last(selectors, count) {
+        return get(fromElement((this.raw || this)[lastNode]), prevNode, selectors, count);
       };
 
       // prevent JScript bug with named function expressions
-      var next = nil, previous = nil, up = nil;
+      var next = nil, previous = nil, up = nil, first = nil, last = nil;
     })();
 
     /*------------------------------------------------------------------------*/
 
     (function() {
-      function collect(decorator, property, selectors) {
-        var match, element = this.raw || this,
+      function get(decorator, property, selectors) {
+        var match, element = decorator.raw || decorator,
          i = 0, results = NodeList();
 
-        if (element = element[property]) {
-          if (selectors && selectors.length) {
-            match = Selector.match;
-            do {
-              if (element.nodeType === ELEMENT_NODE && match(element, selectors))
-                results[i++] = fromElement(element);
-            } while (element = element[property]);
-          } else {
-            do {
-              if (element.nodeType === ELEMENT_NODE)
-                results[i++] = fromElement(element);
-            } while (element = element[property]);
-          }
+        if (!(element = element[property])) return results;
+        
+        if (selectors && selectors.length) {
+          match = Selector.match;
+          do {
+            if (element.nodeType === ELEMENT_NODE && match(element, selectors))
+              results[i++] = fromElement(element);
+          } while (element = element[property]);
+        } else {
+          do {
+            if (element.nodeType === ELEMENT_NODE)
+              results[i++] = fromElement(element);
+          } while (element = element[property]);
         }
         return results;
       }
 
-      plugin.ancestors = function ancestors(selectors) {
-        return collect(this, 'parentNode', selectors);
+      plugin.getAncestors = function getAncestors(selectors) {
+        return get(this, 'parentNode', selectors);
       };
 
-      plugin.nextSiblings = function nextSiblings(selectors) {
-        return collect(this, nextNode, selectors);
+      plugin.getNextSiblings = function getNextSiblings(selectors) {
+        return get(this, nextNode, selectors);
       };
 
-      plugin.previousSiblings = function previousSiblings(selectors) {
-        return collect(this, prevNode, selectors);
+      plugin.getPreviousSiblings = function getPreviousSiblings(selectors) {
+        return get(this, prevNode, selectors);
       };
 
       // prevent JScript bug with named function expressions
-      var ancestors = nil, nextSiblings = nil, previousSiblings = nil;
+      var getAncestors = nil, getNextSiblings = nil, getPreviousSiblings = nil;
     })();
 
   })(Element.plugin, Fuse.Dom.Selector);
