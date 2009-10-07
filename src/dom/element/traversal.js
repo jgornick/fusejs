@@ -90,7 +90,7 @@
         return results;
       };
 
-      if (Bug('GET_ELEMENTS_BY_TAG_NAME_RETURNS_COMMENT_NODES')) {
+      if (hasBug('GET_ELEMENTS_BY_TAG_NAME_RETURNS_COMMENT_NODES')) {
         getDescendants = function getDescendants(selectors) {
           var match, node, i = 0, results = NodeList(),
            nodes = (this.raw || this).getElementsByTagName('*');
@@ -122,7 +122,7 @@
         return false;
       };
  
-      if (Feature('ELEMENT_COMPARE_DOCUMENT_POSITION')) {
+      if (hasFeature('ELEMENT_COMPARE_DOCUMENT_POSITION')) {
         contains = function contains(descendant) {
           /* DOCUMENT_POSITION_CONTAINS = 0x08 */
           descendant = Fuse.get(descendant);
@@ -132,7 +132,7 @@
             .compareDocumentPosition(element) & 8) === 8;
         };
       }
-      else if (Feature('ELEMENT_CONTAINS')) {
+      else if (hasFeature('ELEMENT_CONTAINS')) {
         var __contains = contains;
  
         contains = function contains(descendant) {
@@ -184,7 +184,7 @@
         return null;
       }      
 
-      if (Bug('GET_ELEMENTS_BY_TAG_NAME_RETURNS_COMMENT_NODES')) {
+      if (hasBug('GET_ELEMENTS_BY_TAG_NAME_RETURNS_COMMENT_NODES')) {
         get = function(nodes, count) {
           var i = 0, x = 0, results = NodeList();
           if (count < 2)

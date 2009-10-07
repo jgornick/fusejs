@@ -2,14 +2,14 @@
 (function(global) {
 
   // private vars
-  var DOCUMENT_FRAGMENT_NODE, DOCUMENT_NODE, ELEMENT_NODE, Fuse, Bug, Class,
-   Data, Document, Element, Enumerable, Feature, Form, Func, Obj, Node, NodeList,
-   $break, _extend, addListMethods, bind, capitalize, clone, concatList, defer,
-   eachKey, emptyFunction, escapeRegExpChars, expando,fromElement, getDocument,
-   getNodeName, getWindow, hasKey, inspect, isArray, isElement, isEmpty, isHash,
-   isHostObject, isFunction, isNumber, isPrimitive, isRegExp, isSameOrigin,
-   isString, isUndefined, K, nil, prependList, returnOffset, slice, toInteger,
-   toString, undef, userAgent;
+  var DOCUMENT_FRAGMENT_NODE, DOCUMENT_NODE, ELEMENT_NODE, Fuse, Class, Data, 
+   Document, Element, Enumerable, Env, Form, Func, Obj, Node, NodeList, $break, 
+   _extend, addBugTest, addFeatureTest, addListMethods, bind, capitalize, clone,
+   concatList, defer, eachKey, emptyFunction, escapeRegExpChars, expando, 
+   fromElement, getDocument, getNodeName, getWindow, hasBug, hasFeature, hasKey, 
+   inspect, isArray, isElement, isEmpty, isHash, isHostObject, isFunction, 
+   isNumber, isPrimitive, isRegExp, isSameOrigin, isString, isUndefined, K, nil, 
+   prependList, returnOffset, slice, toInteger, toString, undef, userAgent;
 
   Fuse =
   global.Fuse = function Fuse() { };
@@ -141,6 +141,7 @@
 
 <%= include(
    'env.js',
+   'tester.js',
    'lang/features.js',
    'lang/fusebox.js',
 

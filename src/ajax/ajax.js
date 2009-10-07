@@ -16,7 +16,7 @@
     // XMLHttpRequest doesn't work with local files.
 
     var create = function create() { return false; };
-    if (Feature('ACTIVE_X_OBJECT')) {
+    if (hasFeature('ACTIVE_X_OBJECT')) {
       try {
         new ActiveXObject('MSXML2.XMLHTTP');
         create = function create() {

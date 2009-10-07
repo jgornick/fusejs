@@ -128,7 +128,7 @@
         : element;
     };
 
-    if (Feature('CREATE_ELEMENT_WITH_HTML')) {
+    if (hasFeature('CREATE_ELEMENT_WITH_HTML')) {
       var __create = create;
 
       create = function create(tagName, attributes, context) {
@@ -248,7 +248,7 @@
   Fuse.Dom.getFragmentFromString = (function() {
 
     var ELEMENT_TABLE_INNERHTML_INSERTS_TBODY =
-      Bug('ELEMENT_TABLE_INNERHTML_INSERTS_TBODY'),
+      hasBug('ELEMENT_TABLE_INNERHTML_INSERTS_TBODY'),
 
     FROM_STRING_PARENT_WRAPPERS = (function() {
       var T = {
@@ -292,7 +292,7 @@
     matchTagName= /^<([^> ]+)/,
 
     getFragmentCache = (function() {
-      if (Feature('DOCUMENT_RANGE'))
+      if (hasFeature('DOCUMENT_RANGE'))
         return function(ownerDoc) {
           var id = ownerDoc === doc ? '0' : getFuseId(getWindow(ownerDoc).frameElement),
            data = Data[id] || (Data[id] = { });
@@ -314,7 +314,7 @@
     })(),
 
     getFragmentFromChildNodes = (function() {
-      if (Feature('ELEMENT_REMOVE_NODE'))
+      if (hasFeature('ELEMENT_REMOVE_NODE'))
         return function(parentNode, cache) {
           // removeNode: removes the parent but keeps the children
           var fragment = cache.fragment;
@@ -322,7 +322,7 @@
           return fragment;
         };
 
-      if (Feature('DOCUMENT_RANGE'))
+      if (hasFeature('DOCUMENT_RANGE'))
         return function(parentNode, cache) {
           var range = cache.range;
           range.selectNodeContents(parentNode);
@@ -383,7 +383,7 @@
       }
     }
 
-    return Feature('DOCUMENT_RANGE_CREATE_CONTEXTUAL_FRAGMENT')
+    return hasFeature('DOCUMENT_RANGE_CREATE_CONTEXTUAL_FRAGMENT')
       ? getFromContextualFragment
       : getFromDocumentFragment;
   })();
@@ -433,11 +433,11 @@
         element.appendChild(textNode.cloneNode(false)).data = text;
       }
 
-      if (Feature('ELEMENT_SCRIPT_HAS_TEXT_PROPERTY'))
+      if (hasFeature('ELEMENT_SCRIPT_HAS_TEXT_PROPERTY'))
         return function(element, text) { element.text = text; };
 
       var textNode = Fuse._doc.createTextNode('');
-      if (!Bug('ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT'))
+      if (!hasBug('ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT'))
         return setScriptText;
 
       textNode = Fuse._doc.createComment('');
@@ -452,7 +452,7 @@
         element.parentNode.replaceChild(node, element);
       }
 
-      if (!Bug('ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT'))
+      if (!hasBug('ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT'))
         return replaceElement;
 
       var T = ELEMENT_INSERT_METHODS,
@@ -645,13 +645,13 @@
       };
 
       var BUGGY = { };
-      if (Bug('ELEMENT_COLGROUP_INNERHTML_BUGGY'))
+      if (hasBug('ELEMENT_COLGROUP_INNERHTML_BUGGY'))
         BUGGY.COLGROUP = 1;
-      if (Bug('ELEMENT_OPTGROUP_INNERHTML_BUGGY'))
+      if (hasBug('ELEMENT_OPTGROUP_INNERHTML_BUGGY'))
         BUGGY.OPTGROUP = 1;
-      if (Bug('ELEMENT_SELECT_INNERHTML_BUGGY'))
+      if (hasBug('ELEMENT_SELECT_INNERHTML_BUGGY'))
         BUGGY.SELECT   = 1;
-      if (Bug('ELEMENT_TABLE_INNERHTML_BUGGY'))
+      if (hasBug('ELEMENT_TABLE_INNERHTML_BUGGY'))
         BUGGY.TABLE = BUGGY.TBODY = BUGGY.TR = BUGGY.TD =
         BUGGY.TFOOT = BUGGY.TH    = BUGGY.THEAD = 1;
 
@@ -709,13 +709,13 @@
         return !(element.parentNode && this.descendantOf(element.ownerDocument));
       };
 
-      if (Feature('ELEMENT_SOURCE_INDEX', 'DOCUMENT_ALL_COLLECTION')) {
+      if (hasFeature('ELEMENT_SOURCE_INDEX', 'DOCUMENT_ALL_COLLECTION')) {
         isDetached = function isDetached() {
           var element = this.raw || this;
           return element.ownerDocument.all[element.sourceIndex] !== element;
         };
       }
-      if (Feature('ELEMENT_COMPARE_DOCUMENT_POSITION')) {
+      if (hasFeature('ELEMENT_COMPARE_DOCUMENT_POSITION')) {
         isDetached = function isDetached() {
           /* DOCUMENT_POSITION_DISCONNECTED = 0x01 */
           var element = this.raw || this;

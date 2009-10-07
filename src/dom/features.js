@@ -1,6 +1,6 @@
   /*----------------------------- DOM: FEATURES ------------------------------*/
 
-  Feature.set({
+  addFeatureTest({
     'CREATE_ELEMENT_WITH_HTML': function() {
       try { // true for IE
         var div = Fuse._doc.createElement('<div id="x">');
@@ -31,7 +31,7 @@
     },
 
     'DOCUMENT_RANGE_CREATE_CONTEXTUAL_FRAGMENT': function() {
-      if (Feature('DOCUMENT_RANGE'))
+      if (hasFeature('DOCUMENT_RANGE'))
         return isHostObject(Fuse._doc.createRange(), 'createContextualFragment');
     },
 
@@ -43,7 +43,7 @@
     'ELEMENT_ATTACH_EVENT': function() {
       // true for IE
       return isHostObject(Fuse._doc, 'attachEvent') &&
-        !Feature('ELEMENT_ADD_EVENT_LISTENER');
+        !hasFeature('ELEMENT_ADD_EVENT_LISTENER');
     },
 
     'ELEMENT_BOUNDING_CLIENT_RECT': function() {
@@ -65,7 +65,7 @@
     'ELEMENT_CURRENT_STYLE': function() {
       // true for IE
       return isHostObject(Fuse._docEl, 'currentStyle') &&
-        !Feature('ELEMENT_COMPUTED_STYLE');
+        !hasFeature('ELEMENT_COMPUTED_STYLE');
     },
 
     'ELEMENT_CONTAINS': function() {
@@ -111,7 +111,7 @@
 
     'ELEMENT_INNER_TEXT': function() {
       // true for IE
-      return !Feature('ELEMENT_TEXT_CONTENT') &&
+      return !hasFeature('ELEMENT_TEXT_CONTENT') &&
         typeof Fuse._div.innerText === 'string';
     },
 
@@ -141,7 +141,7 @@
 
   /*-------------------------------- DOM BUGS --------------------------------*/
 
-  Bug.set({
+  addBugTest({
     'ATTRIBUTE_NODES_PERSIST_ON_CLONED_ELEMENTS': function() {
       // true for IE
       var node, clone, div = Fuse._div;
@@ -169,7 +169,7 @@
 
       // check scroll coords
       var scrollTop = docEl.scrollTop;
-      Bug.set('BODY_SCROLL_COORDS_ON_DOCUMENT_ELEMENT',
+      addBugTest('BODY_SCROLL_COORDS_ON_DOCUMENT_ELEMENT',
         ++docEl.scrollTop && docEl.scrollTop === scrollTop + 1);
       docEl.scrollTop = scrollTop;
 
@@ -192,7 +192,7 @@
     },
 
     'ELEMENT_COMPUTED_STYLE_DEFAULTS_TO_ZERO': function() {
-      if (Feature('ELEMENT_COMPUTED_STYLE')) {
+      if (hasFeature('ELEMENT_COMPUTED_STYLE')) {
         // true for Opera
         var result, des = Fuse._docEl.style, backup = des.cssText;
         des.position = 'static';
@@ -206,7 +206,7 @@
     },
 
     'ELEMENT_COMPUTED_STYLE_DIMENSIONS_EQUAL_BORDER_BOX': function() {
-      if (Feature('ELEMENT_COMPUTED_STYLE')) {
+      if (hasFeature('ELEMENT_COMPUTED_STYLE')) {
         // true for Opera 9.2x
         var docEl = Fuse._docEl, des = docEl.style, backup = des.paddingBottom;
         des.paddingBottom = '1px';
@@ -218,7 +218,7 @@
     },
 
     'ELEMENT_COMPUTED_STYLE_HEIGHT_IS_ZERO_WHEN_HIDDEN': function() {
-      if (Feature('ELEMENT_COMPUTED_STYLE')) {
+      if (hasFeature('ELEMENT_COMPUTED_STYLE')) {
         // true for Opera
         var des = Fuse._docEl.style, backup = des.display;
         des.display = 'none';
@@ -253,7 +253,7 @@
       // HTMLObjectElement, HTMLAppletElement and HTMLEmbedElement objects
       // don't inherit from their prototypes. Creating an APPLET element
       // will alert a warning message if Java is not installed.
-      if (Feature('ELEMENT_SPECIFIC_EXTENSIONS')) {
+      if (hasFeature('ELEMENT_SPECIFIC_EXTENSIONS')) {
         var element = Fuse._doc.createElement('object'),
          prototype = global.Element.prototype;
         prototype[expando] = true;
@@ -291,7 +291,7 @@
     }
   });
 
-  Bug.set((function() {
+  addBugTest((function() {
     function createInnerHTMLTest(source, innerHTML, targetNode) {
       return function() {
         var element, div = Fuse._div, result = true;
@@ -353,19 +353,19 @@
         docEl.removeChild(script);
         delete Fuse[expando];
 
-        Feature.set({
+        addFeatureTest({
           'ELEMENT_SCRIPT_HAS_TEXT_PROPERTY': hasText });
 
-        Bug.set({
+        addBugTest({
           'ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT': evalFailed });
 
         return ({ 'feature': hasText, 'bug': evalFailed })[testType];
       };
     }
 
-    Feature.set({
+    addFeatureTest({
       'ELEMENT_SCRIPT_HAS_TEXT_PROPERTY': createScriptTest('feature') });
 
-    Bug.set({
+    addBugTest({
       'ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT': createScriptTest('bug') });
   })();

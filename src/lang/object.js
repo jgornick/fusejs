@@ -55,7 +55,7 @@
      hasOwnProperty = objectProto.hasOwnProperty;
 
     if (typeof hasOwnProperty !== 'function') {
-      if (Feature('OBJECT__PROTO__')) {
+      if (hasFeature('OBJECT__PROTO__')) {
         // Safari 2
         hasKey = function hasKey(object, property) {
           if (object == null) throw new TypeError;
@@ -134,7 +134,7 @@
       return true;
     };
 
-    if (Feature('OBJECT__COUNT__')) {
+    if (hasFeature('OBJECT__COUNT__')) {
       // __count__ is buggy on arrays so we check for push because it's fast.
       var _isEmpty = isEmpty;
       isEmpty = function isEmpty(object) {

@@ -138,10 +138,19 @@
     var Env = Fuse.addNS('Env');
 
     Env.addNS('Agent');
-    Env.addNS('Bug');
-    Env.addNS('Feature');
-
-    _extend(Env.Agent,   __Env.Agent);
-    _extend(Env.Bug,     __Env.Bug);
-    _extend(Env.Feature, __Env.Feature);
+    
+    _extend(Env.Agent, __Env.Agent);
+    
+    var tests = ['Bug', 'Feature'], test, cache, add, remove, has;
+    for (var i = 0, len = tests.length; i < len; i++) {
+      test        = tests[i];
+      cache       = '_' + test.toLowerCase() + 'Cache';
+      add         = 'add' + test + 'Test';
+      remove      = 'remove' + test + 'Test';
+      has         = 'has' + test;
+      Env[cache]  = __Env[cache];
+      Env[add]    = __Env[add];
+      Env[remove] = __Env[remove];
+      Env[has]    = __Env[has];
+    }
   })(Fuse.Env);

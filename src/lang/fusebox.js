@@ -8,12 +8,12 @@
 
     mode = (function()  {
       // avoids the htmlfile activeX warning when served from the file protocol
-      if (Feature('ACTIVE_X_OBJECT') && global.location.protocol !== 'file:')
+      if (hasFeature('ACTIVE_X_OBJECT') && global.location.protocol !== 'file:')
         return 'ACTIVE_X_OBJECT';
 
       // check "OBJECT__PROTO__" first because Firefox will permanently screw up
       // other iframes on the page if an iframe is inserted before the dom has loaded
-      if (Feature('OBJECT__PROTO__'))
+      if (hasFeature('OBJECT__PROTO__'))
         return 'OBJECT__PROTO__';
 
       var doc = global.document;
