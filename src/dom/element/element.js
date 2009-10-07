@@ -511,6 +511,33 @@
     })();
 
     /*------------------------------------------------------------------------*/
+    
+    (function(T) {
+      var before  = T.before,
+       top        = T.top,
+       bottom     = T.bottom,
+       after      = T.after;
+            
+      plugin.insertBefore = function insertBefore(node) {
+        before((this.raw || this), (node.raw || node));
+        return this;
+      };
+      
+      plugin.insertTop = function insertTop(node) {
+        top((this.raw || this), (node.raw || node));
+        return this;
+      };
+      
+      plugin.insertBottom = function insertBottom(node) {
+        bottom((this.raw || this), (node.raw || node));
+        return this;
+      };
+                     
+      plugin.insertAfter = function insertAfter(node) {
+        after((this.raw || this), (node.raw || node));
+        return this;
+      };               
+    })(ELEMENT_INSERT_METHODS);
 
     plugin.insert = function insert(insertions) {
       var content, insertContent, nodeName, position, stripped,
