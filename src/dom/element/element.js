@@ -707,6 +707,18 @@
       return this;
     };
 
+    plugin.clone = function clone(deep, removeIds) {
+      var i = 0, nodes, node,
+        clone = fromElement((this.raw || this).cloneNode(deep));
+
+      if (removeIds) {
+        nodes = (clone.raw || clone).getElementsByTagName('*');
+        while (node = nodes[i++]) node.removeAttribute('id');
+        clone.removeAttribute('id');
+      }
+      return clone;
+    };
+
     plugin.isEmpty = function isEmpty() {
       return Fuse.String((this.raw || this).innerHTML).isBlank();
     };
@@ -811,6 +823,7 @@
 
     // prevent JScript bug with named function expressions
     var cleanWhitespace = nil,
+     clone =              nil,
      isEmpty =            nil,
      hide =               nil,
      getFuseId =          nil,

@@ -72,6 +72,10 @@
         while (i < length) callback(c[i], i++ , this);
       }
     };
+    
+    plugin.clone = function clone() {
+      return Fuse.Range(this.start, this.end, this.exclusive);      
+    };
 
     plugin.max = (function(__max) {
       function max(callback, thisArg) {
@@ -119,7 +123,7 @@
     }
 
     // prevent JScript bug with named function expressions
-    var _each = nil, size = nil, toArray = nil;
+    var _each = nil, clone = nil, size = nil, toArray = nil;
   })(Fuse.Range.plugin);
 
   /*--------------------------------------------------------------------------*/

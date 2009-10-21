@@ -112,10 +112,22 @@
   };
 
   clone =
-  Obj.clone = function clone(object) {
-    if (object && typeof object.clone === 'function')
-      return object.clone();
-    return Obj.extend(Fuse.Object(), object);
+  Obj.clone = function clone(object, deep) {
+    var result = object = Obj(object);
+ 
+    if (object) {
+      if(isFunction(object.clone))
+        result = object.clone(deep)
+      else if (deep) {
+        result = Obj();
+        eachKey(object, function(value, key) {
+          result[key] = clone(value, deep);
+        });
+      } else
+        result = Obj.extend(Obj(), object);
+    }
+ 
+    return result;
   };
 
   isArray =

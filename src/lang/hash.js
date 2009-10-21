@@ -157,10 +157,22 @@
       return this;
     };
 
-    plugin.clone = (function() {
-      function clone() { return new $H(this); };
+    plugin.clone = (function(__clone) {
+      function clone(deep) {
+        var i = 0, result, pair, pairs;
+
+        if (deep) {
+          result = $H();
+          pairs = this._pairs;
+          while (pair = pairs[i++]) result.set(pair[0], __clone(pair[1], deep));
+        }
+        else
+          result = $H(this);
+          
+        return result;
+      }
       return clone;
-    })();
+    })(clone);
 
     plugin.contains = function contains(value) {
       var item, pair, i = 0, pairs = this._pairs;
@@ -174,7 +186,7 @@
     };
 
     plugin.filter = function filter(callback, thisArg) {
-      var key, pair, value, i = 0, pairs = this._pairs, result = new $H();
+      var key, pair, value, i = 0, pairs = this._pairs, result = $H();
       callback = callback || function(value) { return value != null; };
 
       while (pair = pairs[i++]) {
@@ -208,7 +220,7 @@
 
     plugin.map = function map(callback, thisArg) {
       if (!callback) return this;
-      var key, pair, i = 0, pairs = this._pairs, result = new $H();
+      var key, pair, i = 0, pairs = this._pairs, result = $H();
 
       if (thisArg) {
         while (pair = pairs[i++])
@@ -223,7 +235,7 @@
     plugin.partition = function partition(callback, thisArg) {
       callback = callback || K;
       var key, value, pair, i = 0, pairs = this._pairs,
-       trues = new $H(), falses = new $H();
+       trues = $H(), falses = $H();
 
       while (pair = pairs[i++])
         (callback.call(thisArg, value = pair[1], key = pair[0], this) ?
@@ -256,7 +268,7 @@
     plugin.zip = (function() {
       function mapToHash(array) {
         var results = [], length = array.length;
-        while (length--) results[length] = new $H(array[length]);
+        while (length--) results[length] = $H(array[length]);
         return results;
       }
 
@@ -267,7 +279,7 @@
         if (typeof args[args.length - 1] === 'function')
           callback = args.pop();
 
-        var result = new $H(),
+        var result = $H(),
          hashes = prependList(mapToHash(args), this),
          length = hashes.length;
 

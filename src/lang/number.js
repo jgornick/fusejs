@@ -13,6 +13,10 @@
       return ceil;
     })();
 
+    plugin.clone = function clone() {
+      return Fuse.Number(this);
+    };
+
     plugin.floor = (function() {
       function floor() { return Fuse.Number(__floor(this)); }
       var __floor = Math.floor;
@@ -52,5 +56,5 @@
     })();
 
     // prevent JScript bug with named function expressions
-    var times = nil, toColorPart = nil;
+    var clone = nil, times = nil, toColorPart = nil;
   })(Fuse.Number.plugin);

@@ -47,20 +47,29 @@
         return object;
       };
 
-      plugin.clone = (function() {
-        function clone() {
-          var object = Object(this);
+      plugin.clone = (function(__clone) {
+        function clone(deep) {
           if (this == null) throw new TypeError;
-
-          if (isArray(object)) {
-            return object.constructor !== List
-              ? List.fromArray(object)
-              : object.slice(0);
+          var length, result, object = Object(this);
+ 
+          if (deep) {
+            result = List();
+            if (!isArray(object)) object = List.from(object);
+            length = object.length >>> 0;
+            while (length--) result[length] = __clone(object[length], deep);
           }
-          return List.from(object);
+          else {
+            if (isArray(object)) {
+              result = object.constructor !== List
+                ? List.fromArray(object)
+                : object.slice(0);
+            }
+            else result = List.from(object);
+          } 
+          return result;
         }
         return clone;
-      })();
+      })(clone);
 
       plugin.compact = function compact(falsy) {
         if (this == null) throw new TypeError;

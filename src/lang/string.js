@@ -255,6 +255,10 @@
       var cache = { };
       return capitalize;
     })();
+    
+    plugin.clone = function clone() {
+      return Fuse.String(this);
+    };
 
     plugin.contains = function contains(pattern) {
       if (this == null) throw new TypeError;
@@ -462,6 +466,7 @@
 
     // prevent JScript bug with named function expressions
     var isBlank =      nil,
+      clone =          nil,
       contains =       nil,
       endsWith =       nil,
       evalScripts =    nil,

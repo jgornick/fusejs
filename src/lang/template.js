@@ -23,6 +23,10 @@
 
   Fuse.Template.Pattern = /(\\)?(#\{([^}]*)\})/;
 
+  Fuse.Template.plugin.clone = function clone() {
+    return Fuse.Template(this.template, this.pattern);
+  };
+
   Fuse.Template.plugin.evaluate = (function() {
     function evaluate(object) {
       if (object) {

@@ -47,7 +47,7 @@
            !pattern.source) return this.clone();
 
         callback = callback || K;
-        var key, pair, value, i = 0, pairs = this._pairs, result = new $H();
+        var key, pair, value, i = 0, pairs = this._pairs, result = $H();
         if (isString(pattern))
           pattern = new RegExp(escapeRegExpChars(pattern));
 
