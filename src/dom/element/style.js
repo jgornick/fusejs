@@ -24,6 +24,39 @@
 
     camelize = Fuse.String.plugin.camelize,
 
+    // Build our CSS shorthand table
+    shorthandTable = (function() {
+      var table = Obj(), sides = Fuse.Util.$w('Top Right Bottom Left'),
+        common = Fuse.Util.$w('Color Style Width');
+      
+      function addPrefix(prefix, props) {
+        var results = Fuse.List(), length = props.length >>> 0;
+        while (length--) results.push(prefix + props[length]);
+        return results;
+      }
+       
+      Fuse.Util.$w('padding margin border')._each(function(style) {
+        table[style] = addPrefix(style, sides);
+
+        if (style == 'border') {
+          var base, results = Fuse.List(), length = table[style].length >>> 0;
+          while (length--) {
+            base = table[style][length];
+            table[base] = addPrefix(base, common); 
+          }
+        } 
+      });
+       
+      Obj.extend(table, {
+        font: addPrefix('font', Fuse.Util.$w('Style Variant Weight Size Family')).concat('lineHeight'),
+        outline: addPrefix('outline', common),
+        listStyle: addPrefix('listStyle', Fuse.Util.$w('Type Image Position')),
+        background: addPrefix('background', Fuse.Util.$w('Color Image Repeat Attachment Position'))
+      });
+      
+      return table;
+    })(),
+
     nullHandlers = [];
 
     function getComputedStyle(element, name) {
@@ -91,7 +124,19 @@
     // fallback for browsers without computedStyle or currentStyle
     if (!hasFeature('ELEMENT_COMPUTED_STYLE') && !hasFeature('ELEMENT_CURRENT_STYLE'))
       plugin.getStyle = function getStyle(name) {
-        var result = getValue(this, camelize.call(name));
+        var result;
+        if (name in shorthandTable) {
+          var style, length = shorthandTable[name].length;
+          result = Obj();
+          
+          while (length--) {
+            style = shorthandTable[name][length];
+            result[style] = this.getStyle(style);
+          }          
+          return result;
+        }        
+        
+        result = getValue(this, camelize.call(name));
         return result === null ? result : Fuse.String(result);
       };
 
@@ -103,6 +148,17 @@
 
         if (isNull(element, name))
           return null;
+
+        if (name in shorthandTable) {
+          var style, length = shorthandTable[name].length;
+          result = Obj();
+          
+          while (length--) {
+            style = shorthandTable[name][length];
+            result[style] = this.getStyle(style);
+          }          
+          return result;
+        } 
 
         if (DIMENSION_NAMES[name]) {
           dim = name == 'width' ? 'Width' : 'Height';
@@ -123,6 +179,17 @@
 
         if (isNull(element, name)) return null;
 
+        if (name in shorthandTable) {
+          var style, length = shorthandTable[name].length;
+          result = Obj();
+          
+          while (length--) {
+            style = shorthandTable[name][length];
+            result[style] = this.getStyle(style);
+          }          
+          return result;
+        } 
+
         result = getComputedStyle(element, name);
         return result === null ? result : Fuse.String(result);
       };
@@ -140,6 +207,17 @@
       function getStyle(name) {
         var currStyle, element, elemStyle, runtimeStyle, runtimePos,
          stylePos, pos, result, size, unit;
+
+        if (name in shorthandTable) {
+          var style, length = shorthandTable[name].length;
+          result = Obj();
+          
+          while (length--) {
+            style = shorthandTable[name][length];
+            result[style] = this.getStyle(style);
+          }          
+          return result;
+        }
 
         // handle opacity
         if (name == 'opacity') {
