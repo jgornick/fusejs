@@ -8,6 +8,8 @@
       instance.callback  = callback;
       instance.interval  = interval;
       instance.executing = false;
+      instance.count     = 0;
+      instance.startTime = 0;
 
       instance.onTimerEvent = function() { onTimerEvent.call(instance); };
       instance.options = _extend(clone(Timer.options), options);
@@ -24,10 +26,12 @@
         try {
           this.execute();
           this.executing = false;
+          this.count++;
           if (this.timerID !== null) this.start();
         }
         catch (e) {
           this.executing = false;
+          this.count++;
           if (this.timerID !== null) this.start();
           throw e;
         }
@@ -40,6 +44,11 @@
   })();
 
   (function(plugin) {
+    plugin.elapsed = function elapsed() {
+      if (this.timerID === null) return 0;
+      return +new Date - this.startTime;
+    };
+    
     plugin.execute = function execute() {
       this.callback(this);
     };
@@ -47,6 +56,7 @@
     plugin.start = function start() {
       this.timerID = global.setTimeout(this.onTimerEvent,
         this.interval * this.options.multiplier);
+      this.startTime = this.startTime || +new Date;
       return this;
     };
 
@@ -55,11 +65,13 @@
       if (id === null) return;
       global.clearTimeout(id);
       this.timerID = null;
+      this.startTime = 0;
+      this.count = 0;
       return this;
     };
 
     // prevent JScript bug with named function expressions
-    var execute = nil, start = nil, stop = nil;
+    var elapsed = nil, execute = nil, start = nil, stop = nil;
   })(Fuse.Timer.plugin);
 
   Fuse.Timer.options = {
