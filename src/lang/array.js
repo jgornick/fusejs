@@ -135,7 +135,21 @@
       };
 
       /* Create optimized Enumerable equivalents */
-
+      plugin.average = function average() {
+        if (this == null) throw new TypeError;
+        var object = Object(this), length = object.length >>> 0,
+          sum = count = 0, value;
+          
+        while (length--) {
+          value = +object[length];
+          if (value !== 0) {
+            sum += value;
+            count++;
+          }
+        }
+        return Fuse.Number(sum / count);
+      };
+      
       plugin.contains = (function() {
         var contains = function contains(value) {
           if (this == null) throw new TypeError;
@@ -375,6 +389,13 @@
           return a < b ? -1 : a > b ? 1 : 0;
         }).pluck('value');
       };
+      
+      plugin.sum = function sum() {
+        if (this == null) throw new TypeError;
+        var object = Object(this), length = object.length >>> 0, result = 0;
+        while (length--) result -= object[length];
+        return Fuse.Number(-result);
+      };    
 
       plugin.zip = function zip() {
         if (this == null) throw new TypeError;
@@ -399,6 +420,7 @@
 
       // prevent JScript bug with named function expressions
       var _each =  nil,
+       average =   nil,
        clear =     nil,
        compact =   nil,
        each =      nil,
@@ -413,6 +435,7 @@
        pluck =     nil,
        size =      nil,
        sortBy =    nil,
+       sum =       nil,
        unique =    nil,
        without =   nil,
        zip =       nil;

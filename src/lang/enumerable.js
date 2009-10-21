@@ -4,6 +4,18 @@
   Fuse.Enumerable = { };
 
   (function(mixin) {
+    mixin.average = function average() {
+      var sum = count = 0;
+      this._each(function(value) {
+        value = +value;
+        if (value !== 0) {
+          sum += value;
+          count++;
+        }        
+      });
+      return Fuse.Number(sum / count);       
+    };
+    
     mixin.contains = function contains(value) {
       var result = 0;
       this.each(function(item) {
@@ -175,6 +187,12 @@
         return a < b ? -1 : a > b ? 1 : 0;
       }).pluck('value');
     };
+    
+    mixin.sum = function sum() {
+      var result = 0;
+      this._each(function(value) { result -= value; });
+      return Fuse.Number(-result);
+    };
 
     mixin.toArray = function toArray() {
       var results = Fuse.List();
@@ -201,7 +219,8 @@
     mixin.toList = mixin.toArray;
 
     // prevent JScript bug with named function expressions
-    var contains = nil,
+    var average =  nil,
+     contains =    nil,
      each =        nil,
      eachSlice =   nil,
      every =       nil,
@@ -219,6 +238,7 @@
      size =        nil,
      some =        nil,
      sortBy =      nil,
+     sum =         nil,
      toArray =     nil,
      zip =         nil;
   })(Enumerable);
