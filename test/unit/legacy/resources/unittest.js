@@ -26,14 +26,14 @@
 
    slice    = [].slice,
 
-   toString = {}.toString,
+   getClassOf = fuse.Object.getClassOf,
 
    isArray  = function(object) {
-     return toString.call(object) === '[object Array]';
+     return getClassOf(object) == 'Array';
    },
 
    isFunction = function(object) {
-     return toString.call(object) === '[object Function]';
+     return getClassOf(object) == 'Function';
    },
 
    zip = fuse.Array.plugin.zip;
@@ -429,7 +429,7 @@
     }
 
     function isVisible(element) {
-      return fuse.get(element).isVisible();
+      return fuse(element).isVisible();
     }
 
     function assertVisible(element, message) {

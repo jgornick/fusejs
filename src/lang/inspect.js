@@ -3,9 +3,16 @@
   (function() {
     var strInspect,
 
-    strPlugin = fuse.String.plugin,
-
-    specialChars = { '\\': '\\\\', '"' : '\\"', "'" : "\\'" },
+    SPECIAL_CHARS = {
+      '\b': '\\b',
+      '\f': '\\f',
+      '\n': '\\n',
+      '\r': '\\r',
+      '\t': '\\t',
+      '\\': '\\\\',
+      '"' : '\\"',
+      "'" : "\\'"
+    },
 
     // charCodes 0-31 and \ and '
     reWithSingleQuotes = /[\x00-\x1f\\']/g,
@@ -13,8 +20,10 @@
     // charCodes 0-31 and \ and "
     reWithDoubleQuotes = /[\x00-\x1f\\"]/g,
 
+    strPlugin = fuse.String.plugin,
+
     escapeSpecialChars = function(match) {
-      return specialChars[match];
+      return SPECIAL_CHARS[match];
     },
 
     inspectPlugin = function(plugin) {
@@ -25,11 +34,11 @@
       return result;
     };
 
-    // populate specialChars with control characters
+    // populate SPECIAL_CHARS with control characters
     (function(i, key) {
       while (--i) {
-        specialChars[String.fromCharCode(i)] =
-          '\\u' + ('0000' + i.toString(16)).slice(-4);
+        key = String.fromCharCode(i);
+        SPECIAL_CHARS[key] || (SPECIAL_CHARS[key] = '\\u' + ('0000' + i.toString(16)).slice(-4));
       }
     })(32);
 
@@ -49,7 +58,7 @@
     };
 
     fuse.Object.inspect = function inspect(value) {
-      var classType, object, result;
+      var classOf, object, result;
       if (value != null) {
         object = fuse.Object(value);
 
@@ -65,8 +74,8 @@
         // IE7 and below are missing the node's constructor property
         // IE8 node constructors are typeof "object"
         try {
-          classType = toString.call(object);
-          if (classType === '[object Object]' && typeof object.constructor === 'function') {
+          classOf = toString.call(object);
+          if (classOf === '[object Object]' && typeof object.constructor === 'function') {
             result = [];
             eachKey(object, function(value, key) {
               hasKey(object, key) &&
@@ -107,12 +116,12 @@
       var inspect = nil;
     });
 
-    if (fuse.Enumerable) {
-      fuse.Enumerable.inspect = function inspect() {
-        // called normally or called Obj.inspect(fuse.Enumerable)
+    if (fuse.Class.mixins.enumerable) {
+      fuse.Class.mixins.enumerable.inspect = function inspect() {
+        // called normally or called Obj.inspect(fuse.Class.mixins.enumerable)
         return isFunction(this._each)
           ? fuse.String('#<Enumerable:' + this.toArray().inspect() + '>')
-          : inspectPlugin(fuse.Enumerable);
+          : inspectPlugin(fuse.Class.mixins.enumerable);
       };
     }
 

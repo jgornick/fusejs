@@ -93,6 +93,10 @@
       }
     };
 
+    plugin.clone = function clone() {
+      return fuse.Range(this.start, this.end, this.exclusive);
+    };
+
     plugin.max = function max(callback, thisArg) {
       var result;
       if (!callback) {
@@ -127,19 +131,20 @@
     };
 
     // assign any missing Enumerable methods
-    if (fuse.Enumerable) {
-      __max = fuse.Enumerable.max;
-      __min = fuse.Enumerable.min;
-
-      eachKey(fuse.Enumerable, function(value, key, object) {
-        if (hasKey(object, key) && typeof plugin[key] !== 'function') {
-          plugin[key] = value;
-        }
-      });
-    }
+    (function(mixin) {
+      if (mixin) {
+        __max = mixin.max;
+        __min = mixin.min;
+        eachKey(mixin, function(value, key, object) {
+          if (hasKey(object, key) && typeof plugin[key] !== 'function') {
+            plugin[key] = value;
+          }
+        });
+      }
+    })(fuse.Class.mixins.enumerable);
 
     // prevent JScript bug with named function expressions
-    var _each = nil, max = nil, min = nil, size = nil, toArray = nil;
+    var _each = nil, clone = nil, max = nil, min = nil, size = nil, toArray = nil;
   })(fuse.Range.plugin);
 
   /*--------------------------------------------------------------------------*/

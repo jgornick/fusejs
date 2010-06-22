@@ -3,25 +3,29 @@
   Window =
   fuse.dom.Window = (function() {
     var isWindow = function(object) {
-      return toString.call(object) === '[object Window]';
+      return toString.call(object).indexOf('Window') > -1;
     },
 
     Decorator = function() { },
 
-    Window = function Window(object) {
+    Window = function Window(object, isCached) {
       // quick return if empty, decorated, or not a window object
+      var data, decorated;
       if (!object || object.raw || !isWindow(object)) {
         return object;
       }
-
-      // return cached if available
-      var decorated, id = Node.getFuseId(object), data = domData[id];
-      if (data.decorator) {
-        return data.decorator;
+      if (isCached === false) {
+        decorated = new Decorator;
+      } else {
+        // return cached if available
+        data = domData[Node.getFuseId(object)];
+        if (data.decorator) {
+          return data.decorator;
+        }
+        decorated =
+        data.decorator = new Decorator;
       }
 
-      decorated =
-      data.decorator = new Decorator;
       decorated.raw = object;
       return decorated;
     };
@@ -29,7 +33,7 @@
     // weak fallback
     if (!isWindow(global)) {
       isWindow = function(object) {
-        return typeof object.frameElement !== 'undefined';
+        return typeof object.window !== 'undefined' && object.window == object;
       };
     }
 

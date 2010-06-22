@@ -4,6 +4,12 @@
 
     var TREAT_AS_STRING = { '[object Number]': 1, '[object String]': 1 },
 
+    CHECKED_INPUT_TYPES = { 'checkbox': 1, 'radio': 1 },
+
+    PROPS_TO_COPY = { 'OPTION': 'selected', 'TEXTAREA': 'value' },
+
+    DEFAULTS_TO_COPY = { 'selected': 'defaultSelected', 'value': 'defaultValue' },
+
     INSERTABLE_NODE_TYPES = { '1': 1, '3': 1, '8': 1, '10': 1, '11': 1 },
 
     INSERT_POSITIONS_TO_METHODS = {
@@ -58,9 +64,9 @@
 
     rePositions     = /^(?:(?:before|top|bottom|after)(?:,|$))+$/i,
 
-    toHTML = fuse.Object.toHTML,
+    toHTML          = fuse.Object.toHTML,
 
-    getFragmentFromString = fuse.dom.getFragmentFromString,
+    getFragmentFromHTML = fuse.dom.getFragmentFromHTML,
 
     getByTagName = function(node, tagName) {
       var result = [], child = node.firstChild;
@@ -79,16 +85,80 @@
       return result;
     },
 
+    cloneNode = function(source) {
+      return source.cloneNode(false);
+    },
+
+    createCloner = function() {
+      return function(source, deep, isData, isEvents, excludes, context) {
+        var addDispatcher, data, id, length, node, nodes, srcData, srcEvents, i = -1, 
+         element = cloneNode(source, excludes, null, context);
+
+        if (excludes) {
+          length = excludes.length;
+          while (length--) {
+            plugin.removeAttribute.call(element, excludes[length]);
+          }
+        }
+
+        if (isData || isEvents) {
+          srcData = domData[getFuseId(source, true)];
+          srcEvents = srcData && srcData.events;
+
+          if (srcData && isData) {
+            id || (id = getFuseId(element));
+            data = domData[id];
+
+            delete srcData.events;
+            fuse.Object.extend(data, srcData);
+            srcEvents && (srcData.events = srcEvents);
+          }
+          if (srcEvents && isEvents) {
+            id   || (id = getFuseId(element));
+            data || (data = domData[id]);
+
+            // copy delegation watcher
+            if (srcData._isWatchingDelegation) {
+              fuse.dom.Event._addWatcher(element, data);
+            }
+            // copy events
+            addDispatcher = fuse.dom.Event._addDispatcher;
+            eachKey(srcEvents, function(ec, type) {
+              addDispatcher(element, type, null, id);
+              data.events[type].handlers = ec.handlers.slice(0);
+            });
+          }
+        }
+
+  		  if (deep) {
+  		    cloner = createCloner();
+  		    nodes  = source.childNodes;
+    		  while (node = nodes[++i]) {
+    	      element.appendChild(node.nodeType === ELEMENT_NODE
+    	        ? cloner(node, deep, isData, isEvents, excludes, context)
+    	        : node.cloneNode(false));
+    		  }
+  		  }
+  			return element;
+      };
+    },
+
+    cloner = createCloner(),
+
     insertContent = function(element, parentNode, content, position) {
-      var stripped, insertElement = ELEMENT_INSERT_METHODS[position];
+      var stripped, insertElement = ELEMENT_INSERT_METHODS[position],
+       classOf = toString.call(content);
 
       // process string / number
-      if (TREAT_AS_STRING[toString.call(content)]) {
-        stripped = isScriptable && reOpenScriptTag.test(content) ?
-          stripScripts.call(content) : content;
-        if (stripped != '') {
+      if (TREAT_AS_STRING[classOf]) {
+        if (isScriptable && reOpenScriptTag.test(content)) {
+          stripped = stripScripts.call(content);
+        } else {
+          stripped = classOf !== '[object String]' ? String(content) : content;
+        }
+        if (stripped) {
           insertElement(element,
-            getFragmentFromString(stripped, parentNode || element),
+            getFragmentFromHTML(stripped, parentNode || element),
             parentNode);
         }
         // only evalScripts if there are scripts
@@ -151,6 +221,7 @@
       }
     };
 
+    /*------------------------------------------------------------------------*/
 
     plugin.cleanWhitespace = function cleanWhitespace() {
       // removes whitespace-only text node children
@@ -165,6 +236,21 @@
         node = nextNode;
       }
       return this;
+    };
+
+    plugin.clone = function clone(deep) {
+      var context, excludes, element = this.raw || this;
+      if (deep && typeof deep === 'object') {
+        excludes = deep.excludes;
+        context  = deep.context || getDocument(element);
+        if (excludes && !isArray(excludes)) {
+          excludes = [excludes];
+        }
+        result = cloner(element, deep.deep, deep.data, deep.events, excludes, context);
+      } else {
+        result = cloner(element, deep, null, null, null, getDocument(element));
+      }
+      return fromElement(result);
     };
 
     plugin.insertBefore = function insertBefore(content) {
@@ -225,15 +311,18 @@
     };
 
     plugin.replace = function replace(content) {
-      var html, stripped, element = this.raw || this;
+      var html, stripped, element = this.raw || this,
+       classOf = toString.call(content);
 
       // process string / number
-      if (TREAT_AS_STRING[toString.call(content)]) {
+      if (TREAT_AS_STRING[classOf]) {
+        if (isScriptable && reOpenScriptTag.test(content)) {
+          stripped = stripScripts.call(content);
+        } else {
+          stripped = classOf !== '[object String]' ? String(content) : content;
+        }
         html = content;
-        stripped = isScriptable && reOpenScriptTag.test(content) ?
-          stripScripts.call(content) : content;
-        content = stripped == '' ? '' :
-          getFragmentFromString(stripped, element.parentNode);
+        content = getFragmentFromHTML(stripped, element.parentNode);
         if (html != stripped) {
           setTimeout(function() { evalScripts.call(html); }, 10);
         }
@@ -300,13 +389,13 @@
     plugin.wrap = function wrap(wrapper, attributes) {
       var rawWrapper, element = this.raw || this;
       if (isString(wrapper)) {
-        wrapper = Element.create(wrapper, attributes);
+        wrapper = Element.create(wrapper, { 'attrs': attributes, 'context': element });
       }
       if (isElement(wrapper)) {
         wrapper = plugin.setAttribute.call(wrapper, attributes);
       }
       else {
-        wrapper = Element.create('div', wrapper);
+        wrapper = Element.create('div', { 'attrs': wrapper, 'context': element });
       }
       rawWrapper = wrapper.raw || wrapper;
       if (element.parentNode) {
@@ -316,8 +405,17 @@
       return wrapper;
     };
 
+    /*------------------------------------------------------------------------*/
 
-    // fix inserting script elements in Safari <= 2.0.2 and Firefox 2.0.0.2
+    // Optimized for IE/Opera
+    if (envTest('ELEMENT_REMOVE_NODE')) {
+      plugin.remove = function remove() {
+        (this.raw || this).removeNode(true);
+        return this;
+      };
+    }
+
+    // Fix inserting script elements in Safari <= 2.0.2 and Firefox 2.0.0.2
     if (envTest('ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT')) {
       var __replaceElement = replaceElement;
       replaceElement = function(element, node) {
@@ -332,25 +430,17 @@
 
       (function(T) {
         var before = T.before, top = T.top, bottom = T.bottom, after = T.after;
-        T.before = function(element, node) { wrapper(before, element, node); };
-        T.top    = function(element, node) { wrapper(top,    element, node); };
-        T.bottom = function(element, node) { wrapper(bottom, element, node); };
-        T.after  = function(element, node) { wrapper(after,  element, node); };
+        T.after  = function(e, n, p) { wrapper(after,  e, n, p); };
+        T.before = function(e, n, p) { wrapper(before, e, n, p); };
+        T.top    = function(e, n) { wrapper(top,    e, n); };
+        T.bottom = function(e, n) { wrapper(bottom, e, n); };
       })(ELEMENT_INSERT_METHODS);
     }
 
-    // optimized for IE and Opera
-    if (envTest('ELEMENT_REMOVE_NODE')) {
-      plugin.remove = function remove() {
-        (this.raw || this).removeNode(true);
-        return this;
-      };
-    }
-
-    // fix browsers with buggy innerHTML implementations
+    // Fix browsers with buggy innerHTML implementations
     if (ELEMENT_INNERHTML_BUGGY) {
       plugin.update = function update(content) {
-        var isBuggy, stripped, element = this.raw || this,
+        var classOf, isBuggy, stripped, element  = this.raw || this,
          nodeName = getNodeName(element);
 
         // update script elements
@@ -365,13 +455,16 @@
           }
         }
         // process string / number
-        if (TREAT_AS_STRING[toString.call(content)]) {
-          stripped = isScriptable && reOpenScriptTag.test(content) ?
-            stripScripts.call(content) : content;
-
+        classOf = toString.call(content);
+        if (TREAT_AS_STRING[classOf]) {
+          if (isScriptable && reOpenScriptTag.test(content)) {
+            stripped = stripScripts.call(content);
+          } else {
+            stripped = classOf !== '[object String]' ? String(content) : content;
+          }
           if (isBuggy) {
-            if (stripped != '') {
-              element.appendChild(getFragmentFromString(stripped, element));
+            if (stripped) {
+              element.appendChild(getFragmentFromHTML(stripped, element));
             }
           } else {
             element.innerHTML = stripped;
@@ -403,9 +496,66 @@
       };
     }
 
+    // Fix cloning elements in IE 6/7
+    if (envTest('ELEMENT_MERGE_ATTRIBUTES') &&
+       (envTest('ATTRIBUTE_NODES_SHARED_ON_CLONED_ELEMENTS') ||
+        envTest('NAME_ATTRIBUTE_IS_READONLY'))) {
+
+      cloneNode = function(source, excludes, nodeName, context) {
+        var attributes = { }, setName = 1, setType = 1;
+        nodeName || (nodeName = getNodeName(source));
+        if (excludes) {
+          excludes = ' ' + excludes.join(' ') + ' ';
+          setName = excludes.indexOf(' name ') === -1;
+          setType = excludes.indexOf(' type ') === -1;
+        }
+        if (typeof source.submit === 'undefined') {
+          if (setName) attributes.name = source.name;
+          if (setType) attributes.type = source.type;
+        } else {
+          if (setName) attributes.name = plugin.getAttribute.call(source, 'name');
+          if (setType) attributes.type = plugin.getAttribute.call(source, 'type');
+        }
+        element = Element.create(nodeName, { 'attrs': attributes, 'context': context, 'decorate': false });
+        element.mergeAttributes(source);
+        return element;
+      };
+    }
+
+    // Fix form element attributes in IE
+    if (envTest('INPUT_VALUE_PROPERTY_SETS_ATTRIBUTE')) {
+      var __cloneNode = cloneNode;
+      cloneNode = function(source, excludes, nodeName, context) {
+        nodeName || (nodeName = getNodeName(source));
+        var defaultProp, element = __cloneNode(source, excludes, nodeName, context);
+
+        // copy troublesome attributes/properties
+        excludes = excludes && ' ' + excludes.join(' ') + ' ' || '';
+  		  if (nodeName === 'INPUT') {
+  		    if (excludes.indexOf(' value ') === -1) {
+  		      element.defaultValue = source.defaultValue;
+  		      element.value = source.value;
+  		    }
+  		    if (CHECKED_INPUT_TYPES[element.type] &&
+  		        excludes.indexOf(' checked ') === -1) {
+  		      element.defaultChecked = source.defaultChecked;
+  		      element.checked = source.checked;
+  		    }
+  		  }
+  		  else if (prop = PROPS_TO_COPY[nodeName] &&
+  		      excludes.indexOf(' ' + prop + ' ') === -1) {
+		      defaultProp = DEFAULTS_TO_COPY[prop];
+		      element[defaultProp]  = source[defaultProp];
+		      element[prop] = source[prop];
+  		  }
+  		  return element;
+      };
+    }
+
     // prevent JScript bug with named function expressions
     var append =       nil,
      cleanWhitespace = nil,
+     clone =           nil,
      insert =          nil,
      insertAfter =     nil,
      insertBefore =    nil,

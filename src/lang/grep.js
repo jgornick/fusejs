@@ -28,8 +28,8 @@
   });
 
   (function() {
-    if (fuse.Enumerable) {
-      fuse.Enumerable.grep = function grep(pattern, callback, thisArg) {
+    if (fuse.Class.mixins.enumerable) {
+      fuse.Class.mixins.enumerable.grep = function grep(pattern, callback, thisArg) {
         if (!pattern || pattern == '' || isRegExp(pattern) &&!pattern.source) {
           return this.toArray();
         }
@@ -51,7 +51,7 @@
         if (!pattern || pattern == '' || isRegExp(pattern) && !pattern.source) {
           return this.clone();
         }
-        var key, pair, value, i = 0, pairs = this._pairs, result = new $H();
+        var key, pair, value, i = 0, pairs = this._pairs, result = $H();
         if (isString(pattern)) {
           pattern = new RegExp(escapeRegExpChars(pattern));
         }

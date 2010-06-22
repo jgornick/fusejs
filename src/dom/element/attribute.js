@@ -8,24 +8,17 @@
   };
 
   (function(plugin) {
-    var ATTRIBUTE_NODES_SHARED_ON_CLONED_ELEMENTS =
-      envTest('ATTRIBUTE_NODES_SHARED_ON_CLONED_ELEMENTS'),
 
-    hasAttribute = function hasAttribute(name) {
-      return (this.raw || this).hasAttribute(name);
+    var CHECKED_INPUT_TYPES = { 'checkbox': 1, 'radio': 1 },
+
+    PROP_DEFAULTS = { 'selected': 'defaultSelected', 'value': 'defaultValue' },
+
+    TAG_PROPS_WITH_DEFAULTS = { 'OPTION': 'selected', 'TEXTAREA': 'value' };
+
+
+    plugin.hasAttribute = function hasAttribute(name) {
+      return (this.raw || this).hasAttribute(name);  
     };
-
-    if (!isHostType(fuse._docEl, 'hasAttribute')) {
-      hasAttribute = function hasAttribute(name) {
-        // IE6/7 fails to detect value attributes as well as colspan and rowspan
-        // attributes with a value of 1
-        var node = (this.raw || this)
-          .getAttributeNode(Element.Attribute.names[name] || name);
-        return !!node && node.specified;
-      };
-    }
-
-    plugin.hasAttribute = hasAttribute;
 
     plugin.getAttribute = function getAttribute(name) {
       var result, T = Element.Attribute,
@@ -42,13 +35,12 @@
     };
 
     plugin.removeAttribute = function removeAttribute(name) {
-      (this.raw || this)
-        .removeAttribute(Element.Attribute.contentNames[name] || name);
+      (this.raw || this).removeAttribute(Element.Attribute.contentNames[name] || name);
       return this;
     };
 
     plugin.setAttribute = function setAttribute(name, value) {
-      var contentName, node, remove,
+      var contentName, isRemoved, node,
        element = this.raw || this, attributes = { }, T = Element.Attribute;
 
       if (isHash(name)) {
@@ -63,21 +55,17 @@
         value = attributes[name];
         contentName = T.contentNames[name] || name;
         name = T.names[name] || name;
-        remove = value === false || value == null;
+        isRemoved = value === false || value == null;
 
         if (T.write[name]) {
-          if (T.write[name](element, value, remove) === false) {
+          if (T.write[name](element, value, isRemoved) === false) {
             element.removeAttribute(contentName);
           }
         }
-        else if (remove) {
+        else if (isRemoved) {
           element.removeAttribute(contentName);
         }
         else {
-          if (ATTRIBUTE_NODES_SHARED_ON_CLONED_ELEMENTS &&
-              plugin.hasAttribute.call(this, contentName)) {
-            element.removeAttribute(contentName);
-          }
           element.setAttribute(contentName,
             value === true ? name : String(value));
         }
@@ -85,16 +73,43 @@
       return this;
     };
 
+    // For IE
+    if (!envTest('ELEMENT_HAS_ATTRIBUTE')) {
+      plugin.hasAttribute = function hasAttribute(name) {
+        var defaultProp, node = this.raw || this,
+         nodeName = getNodeName(node);
+
+        if (nodeName === 'INPUT') {
+          if (name == 'value') {
+            defaultProp = 'defaultValue';
+          } else if (name == 'checked' && CHECKED_INPUT_TYPES[node.type]) {
+            defaultProp = 'defaultChecked';
+          }
+        } else if (TAG_PROPS_WITH_DEFAULTS[nodeName] == name) {
+          defaultProp = PROP_DEFAULTS[name];
+        }
+
+        if (defaultProp) {
+          return !!node[defaultProp];
+        }
+        // IE6/7 fails to detect value attributes as well as colspan and rowspan
+        // attributes with a value of 1
+        node = node.getAttributeNode(Element.Attribute.names[name] || name);
+        return !!node && node.specified;
+      };
+    }
+
     // prevent JScript bug with named function expressions
-    var getAttribute = nil, setAttribute = nil, removeAttribute = nil;
+    var getAttribute = nil,
+     hasAttribute =    nil,
+     setAttribute =    nil,
+     removeAttribute = nil;
   })(Element.plugin);
 
   /*--------------------------------------------------------------------------*/
 
   (function(T) {
-    var INPUT_DEFAULT_VALUE,
-
-    plugin = Element.plugin,
+    var plugin = Element.plugin,
 
     getAttribute = function(element, contentName) {
       return element.getAttribute(contentName);
@@ -107,8 +122,8 @@
       };
     },
 
-    getEvent = function(element, contentName) {
-      var node = element.getAttributeNode(contentName);
+    getEvent = function(element, name) {
+      var node = element.getAttributeNode(name);
       return node && node.specified && node.value;
     },
 
@@ -151,12 +166,12 @@
       };
     },
 
-    setNode = function(contentName) {
+    setNode = function(name) {
       return function(element, value, remove) {
         if (remove) return false;
-        var attr = element.getAttributeNode(contentName);
+        var attr = element.getAttributeNode(name);
         if (!attr) {
-          attr = element.ownerDocument.createAttribute(contentName);
+          attr = element.ownerDocument.createAttribute(name);
           element.setAttributeNode(attr);
         }
         attr.value = String(value);
@@ -179,9 +194,16 @@
     // mandate type getter
     T.read.type = getAttribute;
 
+    // mandate getter/setter for checked and selected attributes
+    // http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-37770574
+    T.read.checked   = getDefault('Checked');
+    T.write.checked  = setDefault('Checked');
+    T.read.selected  = getDefault('Selected');
+    T.write.selected = setDefault('Selected');
+
     // mandate flag attributes set and return their name
-    splitEach('checked disabled isMap multiple noHref noResize noShade ' +
-      'noWrap readOnly selected',
+    splitEach('disabled isMap multiple noHref noResize noShade ' +
+      'noWrap readOnly',
       function(contentName) {
         var lower = contentName.toLowerCase();
         T.read[lower]  = getFlag(contentName);
@@ -196,42 +218,38 @@
         T.read['on' + name] = getEvent;
     });
 
+    // mandate getAttribute/setAttribute for value
+    // http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-26091157
+    Element.extendByTag(['input', 'textarea'], function() {
+      var __getAttribute = plugin.getAttribute,
+       __setAttribute = plugin.setAttribute,
+
+      getAttribute = function getAttribute(name) {
+        return name == 'value'
+          ? getValue(this.raw || this)
+          : __getAttribute.call(this, name);
+      },
+
+      setAttribute = function setAttribute(name, value) {
+        name == 'value'
+          ? setValue(this.raw || this, value)
+          : __setAttribute.call(this, name, value);
+        return this;
+      };
+
+      return { 'getAttribute': getAttribute, 'setAttribute': setAttribute };
+    });
+ 
     // capability checks
     (function() {
       var checkbox, input, node, value,
-       doc    = fuse._doc,
-       form   = doc.createElement('form'),
-       label  = doc.createElement('label'),
-       select = doc.createElement('select');
+       doc   = fuse._doc,
+       form  = doc.createElement('form'),
+       label = doc.createElement('label');
 
       label.htmlFor = label.className = 'x';
       label.setAttribute('style', 'display:block');
       form.setAttribute('enctype', 'multipart/form-data');
-
-      if (envTest('CREATE_ELEMENT_WITH_HTML')) {
-        checkbox = doc.createElement('<input type="checkbox">');
-        input = doc.createElement('<input type="text">');
-      } else {
-        checkbox = doc.createElement('input');
-        input = checkbox.cloneNode(false);
-        checkbox.type = 'checkbox';
-        input.type = 'text';
-      }
-
-      // test defaultValue
-      INPUT_DEFAULT_VALUE = 'defaultValue' in input;
-
-      // test defaultChecked
-      if ('defaultChecked' in checkbox) {
-        T.read.checked  = getDefault('Checked');
-        T.write.checked = setDefault('Checked');
-      }
-
-      // test defaultSelected
-      if ('defaultSelected' in select) {
-        T.read.selected  = getDefault('Selected');
-        T.write.selected = setDefault('Selected');
-      }
 
       // translate content name `htmlFor`
       if (label.getAttribute('htmlFor') === 'x') {
@@ -269,29 +287,6 @@
         splitEach('href longdesc src', function(name) { T.read[name] = getExact; });
       }
     })();
-
-    // getter/setter for input element value
-    if (INPUT_DEFAULT_VALUE) {
-      Element.extendByTag('input', function() {
-        var __getAttribute = plugin.getAttribute,
-         __setAttribute = plugin.setAttribute,
-
-        getAttribute = function getAttribute(name) {
-          return name == 'value'
-            ? getValue(this.raw || this)
-            : __getAttribute.call(this, name);
-        },
-
-        setAttribute = function setAttribute(name, value) {
-          name == 'value'
-            ? setValue(this.raw || this, value)
-            : __setAttribute.call(this, name, value);
-          return this;
-        };
-
-        return { 'getAttribute': getAttribute, 'setAttribute': setAttribute };
-      });
-    }
 
     // setter for button element value
     if (envTest('BUTTON_VALUE_CHANGES_AFFECT_INNER_CONTENT')) {

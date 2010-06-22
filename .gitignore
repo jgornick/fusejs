@@ -1,2 +1,8 @@
-.DS_Store
-test/unit/tmp
+.DS_Store?
+ehthumbs.db
+Icon?
+Thumbs.db
+
+test/unit/legacy/build
+
+*.tmproj

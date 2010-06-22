@@ -57,14 +57,21 @@
       return object;
     };
 
-    plugin.clone = function clone() {
-      var object = Object(this);
-      if (isArray(object)) {
-        return object.constructor !== List
+    plugin.clone = function clone(deep) {
+      var length, result, object = Object(this), i = -1;
+      if (deep) {
+        result = List();
+        length = object.length >>> 0;
+        while (++i < length) result[i] = fuse.Object.clone(object[i], deep);
+      }
+      else if (isArray(object)) {
+        result = object.constructor !== List
           ? List.fromArray(object)
           : object.slice(0);
+      } else {
+        result = List.from(object);
       }
-      return List.from(object);
+      return result;
     };
 
     plugin.compact = function compact(falsy) {
@@ -568,13 +575,13 @@
     }
 
     // assign any missing Enumerable methods
-    if (fuse.Enumerable) {
+    if (fuse.Class.mixins.enumerable) {
       plugin._each = function _each(callback) {
         this.forEach(callback);
         return this;
       };
 
-      eachKey(fuse.Enumerable, function(value, key, object) {
+      eachKey(fuse.Class.mixins.enumerable, function(value, key, object) {
         if (hasKey(object, key) && typeof plugin[key] !== 'function') {
           plugin[key] = value;
         }
