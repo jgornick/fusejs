@@ -74,8 +74,14 @@ new Test.Unit.Runner({
   },
 
   'testSelectorWithTagNameAndSpecificAttributeValue': function() {
+    // http://www.w3.org/TR/CSS21/syndata.html#value-def-identifier
+    // http://www.w3.org/TR/CSS2/selector.html#matching-attrs
+    // http://www.w3.org/TR/CSS21/syndata.html#strings
+    var errored = false;
+    try { $$('a[href=#]'); } catch(e) { errored = true; }
+
+    this.assert(errored, 'Should error when non class, id, or name attributes selectors are not quoted.');
     this.assertEnumEqual($('link_1', 'link_2', 'link_3'), $$('a[href="#"]'));
-    this.assertEnumEqual($('link_1', 'link_2', 'link_3'), $$('a[href=#]'));
   },
 
   'testSelectorWithTagNameAndWhitespaceTokenizedAttributeValue': function() {
@@ -126,17 +132,19 @@ new Test.Unit.Runner({
   },
 
   'testSelectorWithBracketAttributeValue': function() {
+    // quoted
     this.assertEnumEqual($('chk_1', 'chk_2'),
-      $$('#troubleForm2 input[name="brackets[5][]"]'));
+      $$('#troubleForm2 input[name="brackets\\[5\\]\\[\\]"]'));
+
+    // unquoted
+    this.assertEnumEqual($('chk_1', 'chk_2'),
+      $$('#troubleForm2 input[name=brackets\\[5\\]\\[\\]]'));
 
     this.assertEnumEqual([$('chk_1')],
-      $$('#troubleForm2 input[name="brackets[5][]"]:checked'));
+      $$('#troubleForm2 input[name="brackets\\[5\\]\\[\\]"]:checked'));
 
     this.assertEnumEqual([$('chk_2')],
-      $$('#troubleForm2 input[name="brackets[5][]"][value=2]'));
-
-    this.assertEnumEqual([],
-      $$('#troubleForm2 input[name=brackets[5][]]'));
+      $$('#troubleForm2 input[name="brackets\\[5\\]\\[\\]"][value="2"]'));
   },
 
   'test$$WithNestedAttributeSelectors': function() {
@@ -370,7 +378,7 @@ new Test.Unit.Runner({
       $$('#level1 *[id*="2"]'));
 
     this.assertEnumEqual($('level2_1', 'level3_2', 'level2_2', 'level2_3'),
-      $$('#level1 *[id*=2]'));
+      $$('#level1 *[id*="2"]'));
 
     $RunBenchmarks && this.wait(500, function() {
       this.benchmark(function() { $$('#level1 *[id^=level2_]') }, 1000, '[^=]');

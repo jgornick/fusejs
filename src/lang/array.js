@@ -20,20 +20,28 @@
     };
 
     List.from = function from(iterable) {
-      if (!iterable || iterable == '') return List();
+      var length, object, result;
+      if (!arguments.length) return List();
 
       // Safari 2.x will crash when accessing a non-existent property of a
       // node list, not in the document, that contains a text node unless we
       // use the `in` operator
-      var object = fuse.Object(iterable);
-      if ('toArray' in object) return object.toArray();
-      if ('item' in iterable)  return List.fromNodeList(iterable);
-
-      var length = iterable.length >>> 0, result = List(length);
-      while (length--) {
-        if (length in object) result[length] = iterable[length];
+      object = fuse.Object(iterable);
+      if ('toArray' in object) {
+        return object.toArray();
       }
-      return result;
+      if ('item' in object) {
+        return List.fromNodeList(iterable);
+      }
+      if ('length' in object) {
+        length = iterable.length >>> 0;
+        result = List(length);
+        while (length--) {
+          if (length in object) result[length] = iterable[length];
+        }
+        return result;
+      }
+      return List.fromArray([iterable]);
     };
 
     List.fromNodeList = function fromNodeList(nodeList) {
@@ -592,34 +600,34 @@
     plugin.toArray = plugin.clone;
 
     // prevent JScript bug with named function expressions
-    var _each =     nil,
-     clear =        nil,
-     clone =        nil,
-     compact =      nil,
-     each =         nil,
-     every =        nil,
-     filter =       nil,
-     first =        nil,
-     flatten =      nil,
-     forEach =      nil,
-     from =         nil,
-     fromNodeList = nil,
-     indexOf =      nil,
-     insert =       nil,
-     invoke =       nil,
-     last =         nil,
-     lastIndexOf =  nil,
-     map =          nil,
-     max =          nil,
-     min =          nil,
-     partition =    nil,
-     pluck =        nil,
-     size =         nil,
-     some =         nil,
-     sortBy =       nil,
-     unique =       nil,
-     without =      nil,
-     zip =          nil;
+    var _each =     null,
+     clear =        null,
+     clone =        null,
+     compact =      null,
+     each =         null,
+     every =        null,
+     filter =       null,
+     first =        null,
+     flatten =      null,
+     forEach =      null,
+     from =         null,
+     fromNodeList = null,
+     indexOf =      null,
+     insert =       null,
+     invoke =       null,
+     last =         null,
+     lastIndexOf =  null,
+     map =          null,
+     max =          null,
+     min =          null,
+     partition =    null,
+     pluck =        null,
+     size =         null,
+     some =         null,
+     sortBy =       null,
+     unique =       null,
+     without =      null,
+     zip =          null;
   });
 
   addArrayMethods(fuse.Array);

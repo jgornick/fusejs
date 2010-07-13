@@ -142,40 +142,6 @@
         .replace(reHyphens,      '_').toLowerCase());
     };
 
-    // ES5 15.5.4.8
-    if (!isFunction(plugin.lastIndexOf)) {
-      plugin.lastIndexOf = function lastIndexOf(searchString, position) {
-        searchString = String(searchString);
-
-        var string = String(this), len = string.length,
-         searchLen = searchString.length;
-
-        if (searchLen > len) {
-          return fuse.Number(-1);
-        }
-
-        if (position < 0) {
-          position = 0;
-        } else if (isNaN(position) || position > len - searchLen) {
-          position = len - searchLen;
-        } else {
-          position = +position;
-        }
-
-        if (!searchLen) {
-          return fuse.Number(position);
-        }
-
-        position++;
-        while (position--) {
-          if (string.slice(position, position + searchLen) === searchString)
-            return fuse.Number(position);
-        }
-        return fuse.Number(-1);
-      };
-
-      plugin.lastIndexOf.raw = plugin.lastIndexOf;
-    }
     // ES5 15.5.4.20
     if (!isFunction(plugin.trim)) {
       plugin.trim = function trim() {
@@ -202,26 +168,25 @@
     }
 
     // prevent JScript bug with named function expressions
-    var blank =        nil,
-      camelize =       nil,
-      capitalize =     nil,
-      clone =          nil,
-      contains =       nil,
-      endsWith =       nil,
-      evalScripts =    nil,
-      extractScripts = nil,
-      hyphenate =      nil,
-      isEmpty =        nil,
-      lastIndexOf =    nil,
-      startsWith =     nil,
-      stripScripts =   nil,
-      toArray =        nil,
-      times =          nil,
-      trim =           nil,
-      trimLeft =       nil,
-      trimRight =      nil,
-      truncate =       nil,
-      underscore =     nil;
+    var blank =        null,
+      camelize =       null,
+      capitalize =     null,
+      clone =          null,
+      contains =       null,
+      endsWith =       null,
+      evalScripts =    null,
+      extractScripts = null,
+      hyphenate =      null,
+      isEmpty =        null,
+      startsWith =     null,
+      stripScripts =   null,
+      toArray =        null,
+      times =          null,
+      trim =           null,
+      trimLeft =       null,
+      trimRight =      null,
+      truncate =       null,
+      underscore =     null;
   })(fuse.String.plugin);
 
   /*--------------------------------------------------------------------------*/
@@ -341,5 +306,5 @@
     };
 
     // prevent JScript bug with named function expressions
-    var escapeHTML = nil, stripTags = nil, unescapeHTML = nil;
+    var escapeHTML = null, stripTags = null, unescapeHTML = null;
   })(fuse.String.plugin);

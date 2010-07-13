@@ -389,13 +389,13 @@
     plugin.wrap = function wrap(wrapper, attributes) {
       var rawWrapper, element = this.raw || this;
       if (isString(wrapper)) {
-        wrapper = Element.create(wrapper, { 'attrs': attributes, 'context': element });
+        wrapper = Element(wrapper, { 'attrs': attributes, 'context': element });
       }
       if (isElement(wrapper)) {
         wrapper = plugin.setAttribute.call(wrapper, attributes);
       }
       else {
-        wrapper = Element.create('div', { 'attrs': wrapper, 'context': element });
+        wrapper = Element('div', { 'attrs': wrapper, 'context': element });
       }
       rawWrapper = wrapper.raw || wrapper;
       if (element.parentNode) {
@@ -516,7 +516,7 @@
           if (setName) attributes.name = plugin.getAttribute.call(source, 'name');
           if (setType) attributes.type = plugin.getAttribute.call(source, 'type');
         }
-        element = Element.create(nodeName, { 'attrs': attributes, 'context': context, 'decorate': false });
+        element = Element(nodeName, { 'attrs': attributes, 'context': context, 'decorate': false });
         element.mergeAttributes(source);
         return element;
       };
@@ -553,14 +553,14 @@
     }
 
     // prevent JScript bug with named function expressions
-    var append =       nil,
-     cleanWhitespace = nil,
-     clone =           nil,
-     insert =          nil,
-     insertAfter =     nil,
-     insertBefore =    nil,
-     prepend =         nil,
-     remove =          nil,
-     replace =         nil,
-     wrap =            nil;
+    var append =       null,
+     cleanWhitespace = null,
+     clone =           null,
+     insert =          null,
+     insertAfter =     null,
+     insertBefore =    null,
+     prepend =         null,
+     remove =          null,
+     replace =         null,
+     wrap =            null;
   })(Element.plugin);
