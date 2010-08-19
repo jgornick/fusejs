@@ -1,6 +1,6 @@
   /*---------------------------- SELECTOR: PEPPY -----------------------------*/
 
-  fuse[uid] = global.peppy;
+  fuse[uid] = window.peppy;
 
   //= require "../../../vendor/peppy/peppy.js"
 
@@ -12,7 +12,7 @@
         fuse.dom.getDocument(element));
 
       while (node = result[++i]) {
-        if (node === element) return true;
+        if (node == element) return true;
       }
       return false;
     },
@@ -34,5 +34,5 @@
   })(peppy, fuse.dom.selector, fuse.dom.NodeList);
 
   // restore
-  if (fuse[uid]) global.peppy = fuse[uid];
+  if (fuse[uid]) window.peppy = fuse[uid];
   delete fuse[uid];

@@ -14,7 +14,7 @@
      reBool    = /^(?:(?:is|has)[A-Z]|contains)/,
      reGetter  = /^(?:get[A-Z]|down|first|identify|inspect|last|next|previous|read|scroll)/;
 
-    if (!arrEvery || arrEvery === (arrEvery = arrEvery.raw)) {
+    if (!arrEvery || arrEvery == (arrEvery = arrEvery.raw)) {
       arrEvery = function(callback) {
         var i = -1, array = this, length = array.length;
         while (++i < length) {
@@ -23,7 +23,7 @@
         return true;
       };
     }
-    if (!arrEach || arrEach === arrEach.raw) {
+    if (!arrEach || arrEach == arrEach.raw) {
      arrEach = function(callback) {
         var i = -1, array = this, length = array.length;
         while (++i < length) {
@@ -31,7 +31,7 @@
         }
       };
     }
-    if (!arrSome || arrSome === (arrSome = arrSome.raw)) {
+    if (!arrSome || arrSome == (arrSome = arrSome.raw)) {
       arrSome = function(callback) {
         var i = -1, array = this, length = array.length;
         while (++i < length) {
@@ -42,7 +42,7 @@
     }
 
     return function(value, key, object) {
-      if (!SKIPPED_KEYS[key] && isFunction(value) && hasKey(object, key)) {
+      if (!SKIPPED_KEYS[key] && hasKey(object, key) && isFunction(value)) {
         if (reGetter.test(key)) {
           // getters return the value of the first element
           plugin[key] = Function('c,gc',

@@ -1,13 +1,13 @@
   /*---------------------------- SELECTOR: SIZZLE ----------------------------*/
 
-  fuse[uid] = global.Sizzle;
+  fuse[uid] = window.Sizzle;
 
   //= require "../../../vendor/sizzle/sizzle.js"
 
   (function(engine, object, NodeList) {
     var match = function match(element, selectors) {
       return engine(String(selectors || ''), null, null,
-        [element.raw || fuse(element).raw]).length === 1;
+        [element.raw || fuse(element).raw]).length == 1;
     },
 
     select = function select(selectors, context, callback) {
@@ -27,5 +27,5 @@
   })(Sizzle, fuse.dom.selector, fuse.dom.NodeList);
 
   // restore
-  if (fuse[uid]) global.Sizzle = fuse[uid];
+  if (fuse[uid]) window.Sizzle = fuse[uid];
   delete fuse[uid];

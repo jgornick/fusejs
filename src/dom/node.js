@@ -13,7 +13,7 @@
       if (!node || node.raw) {
         return node;
       }
-      if (node.nodeType !== TEXT_NODE) {
+      if (node.nodeType != TEXT_NODE) {
         // return cached if available
         if (isCached !== false) {
           data = domData[Node.getFuseId(node)];
@@ -69,7 +69,7 @@
         fuse.updateGenerics(Klass, deep);
       } else {
         fuse.Object.each(Klass.prototype, function(value, key, proto) {
-          if (!SKIPPED_KEYS[key] && isFunction(proto[key]) && hasKey(proto, key))
+          if (!SKIPPED_KEYS[key] && hasKey(proto, key) && isFunction(proto[key]))
             Klass[key] = createGeneric(proto, key);
         });
       }
@@ -87,12 +87,12 @@
         // the same window may not strict equal each other.
         win = getWindow(node);
         if (node == win) {
-          id = node == global ? '1' : getFuseId(node.frameElement) + '-1';
+          id = node == window ? '1' : getFuseId(node.frameElement) + '-1';
         }
-        else if (node.nodeType === DOCUMENT_NODE) {
+        else if (node.nodeType == DOCUMENT_NODE) {
           // quick return for common case OR
           // calculate id for foreign document objects
-          id = node === fuse._doc ? '2' : getFuseId(win.frameElement) + '-2';
+          id = node == fuse._doc ? '2' : getFuseId(win.frameElement) + '-2';
           skipDataInit || (skipDataInit = domData[id]);
           if (!skipDataInit) {
             skipDataInit =

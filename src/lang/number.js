@@ -2,7 +2,7 @@
 
   (function(plugin) {
     var pad    = '000000',
-     __toFixed = (0).toFixed,
+     __toFixed = 0..toFixed,
      __abs     = Math.abs,
      __ceil    = Math.ceil,
      __floor   = Math.floor,
@@ -32,7 +32,7 @@
 
     plugin.times = function times(callback, thisArg) {
       var i = -1, length = toInteger(this);
-      if (arguments.length === 1) {
+      if (arguments.length == 1) {
         while (++i < length) callback(i, i);
       } else {
         while (++i < length) callback.call(thisArg, i, i);
@@ -47,7 +47,7 @@
     plugin.toPaddedString = function toPaddedString(length, radix) {
       var string = toInteger(this).toString(radix || 10);
       if (length <= string.length) return fuse.String(string);
-      if (length > pad.length) pad = new Array(length + 1).join('0');
+      if (length > pad.length) pad = Array(length + 1).join('0');
       return fuse.String((pad + string).slice(-length));
     };
 

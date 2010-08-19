@@ -1,6 +1,6 @@
   /*---------------------------- SELECTOR: DOMASSISTANT ----------------------------*/
 
-  fuse[uid] = global.DOMAssistant;
+  fuse[uid] = window.DOMAssistant;
 
   //= require "../../../vendor/domassistant/DOMAssistant.js"
 
@@ -14,7 +14,7 @@
         .cssSelect(String(selectors || ''));
 
       while (node = result[++i]) {
-        if (node === element) return true;
+        if (node == element) return true;
       }
       return false;
     },
@@ -36,5 +36,5 @@
   })(DOMAssistant, fuse.dom.selector, fuse.dom.NodeList);
 
   // restore
-  if (fuse[uid]) global.DOMAssistant = fuse[uid];
+  if (fuse[uid]) window.DOMAssistant = fuse[uid];
   delete fuse[uid];

@@ -1,6 +1,7 @@
   /*---------------------------------- EVENT ---------------------------------*/
 
   fuse.dom.Event = (function() {
+
     var Decorator = function(event, currTarget) {
       var getCurrentTarget =
       this.getCurrentTarget = function getCurrentTarget() {
@@ -14,7 +15,7 @@
     Event = function Event(event, target) {
       var decorated;
       if (event) {
-        if (typeof event.raw !== 'undefined') {
+        if (typeof event.raw != 'undefined') {
           return event;
         }
         decorated = new Decorator(event, target);
@@ -87,35 +88,35 @@
       isLeftClick = function isLeftClick() {
         var event = this.raw;
         return (this.isLeftClick = createGetter('isLeftClick',
-          !!event && event[CLICK_PROP] === CLICK_MAP.L))();
+          !!event && event[CLICK_PROP] == CLICK_MAP.L))();
       },
 
       isMiddleClick = function isMiddleClick() {
         var event = this.raw;
         return (this.isMiddleClick = createGetter('isMiddleClick',
-          !!event && event[CLICK_PROP] === CLICK_MAP.M))();
+          !!event && event[CLICK_PROP] == CLICK_MAP.M))();
       },
 
       isRightClick = function isRightClick() {
         var event = this.raw;
         return (this.isRightClick = createGetter('isRightClick',
-          !!event && event[CLICK_PROP] === CLICK_MAP.R))();
+          !!event && event[CLICK_PROP] == CLICK_MAP.R))();
       };
 
-      if (this.raw && typeof this.raw.which === 'number') {
+      if (this.raw && typeof this.raw.which == 'number') {
         // simulate a middle click by pressing the Apple key in Safari 2.x
-        if (typeof this.raw.metaKey === 'boolean') {
+        if (typeof this.raw.metaKey == 'boolean') {
           isMiddleClick = function isMiddleClick() {
             var event = this.raw, which = event && event.which;
             return (this.isMiddleClick = createGetter('isMiddleClick',
-              which === CLICK_MAP.L ? event.metaKey : which === CLICK_MAP.M))();
+              which == CLICK_MAP.L ? event.metaKey : which == CLICK_MAP.M))();
           };
         }
       }
       // for IE
       // check for `button` second for browsers that have `which` and `button`
       // compatibility charts found at http://unixpapa.com/js/mouse.html
-      else if (this.raw && typeof this.raw.button === 'number') {
+      else if (this.raw && typeof this.raw.button == 'number') {
         CLICK_MAP  = { 'L': 1, 'M': 4, 'R': 2 };
         CLICK_PROP = 'button';
       }
@@ -247,21 +248,21 @@
           //    moving between radio buttons via arrow keys.
           // 3) Force window to return window
           if (BUGGY_EVENT_TYPES[type] ||
-              (getNodeName(currRaw) === 'INPUT' &&
-              currRaw.type === 'radio' && type === 'click') ||
+              (getNodeName(currRaw) == 'INPUT' &&
+              currRaw.type == 'radio' && type == 'click') ||
               currRaw == getWindow(currRaw)) {
             node = currTarget;
           }
           // Fix a Safari bug where a text node gets passed as the target of an
           // anchor click rather than the anchor itself.
-          else if (node.nodeType === TEXT_NODE) {
+          else if (node.nodeType == TEXT_NODE) {
             node = node.parentNode;
           }
         }
         return node;
       };
 
-      if (typeof decorator.raw.target === 'undefined') {
+      if (typeof decorator.raw.target == 'undefined') {
         getEventTarget = function(decorator) {
           var node, event = decorator.raw;
           if (event) {
@@ -308,7 +309,7 @@
 
         removeObserver = function(element, type, handler) {
           var attrName = 'on' + type;
-          if (element[attrName] === handler) {
+          if (element[attrName] == handler) {
             element[attrName] = null;
           }
         };
@@ -331,7 +332,7 @@
       // fired events have no raw
       if (this.raw) {
         // for IE
-        if (typeof this.raw.preventDefault === 'undefined') {
+        if (typeof this.raw.preventDefault == 'undefined') {
           cancel = function cancel() {
             if (this.raw) this.raw.returnValue = false;
             return setCancelled(this);
@@ -357,7 +358,7 @@
       // fired events have no raw
       if (this.raw) {
         // for IE
-        if (typeof this.raw.stopPropagation === 'undefined') {
+        if (typeof this.raw.stopPropagation == 'undefined') {
           stopBubbling = function stopBubbling() {
             if (this.raw) this.raw.cancelBubble = true;
             return setBubbling(this);;
@@ -404,7 +405,7 @@
         return setRelatedTarget(this, null);
       }
       // for IE
-      if (typeof this.raw.relatedTarget === 'undefined') {
+      if (typeof this.raw.relatedTarget == 'undefined') {
         getRelatedTarget = function getRelatedTarget() {
           var node = null, event = this.raw;
           switch (event && event.type) {
@@ -432,19 +433,22 @@
     };
 
     plugin.findElement = function findElement(selectors, untilElement) {
-      var match = fuse.dom.selector.match,
-       element = this.getTarget === plugin.getTarget ? getEventTarget(this) : this.getTarget();
+      var decorator, match = fuse.dom.selector.match,
+       element = this.getTarget == plugin.getTarget ? getEventTarget(this) : this.getTarget();
 
-      element = element.raw || element;
-      if (element !== untilElement) {
-        if (selectors == null || selectors == '' || !element || match(element, selectors)) {
-          return element;
+      if (element.raw) {
+        decorator = element;
+        element = element.raw;
+      }
+      if (element != untilElement) {
+        if (!selectors || selectors == '' || match(element, selectors)) {
+          return decorator || fromElement(element);
         }
-        if (element = (element.raw || element).parentNode) {
+        if (element = element.parentNode) {
           do {
-            if (element === untilElement)
+            if (element == untilElement)
               break;
-            if (element.nodeType === ELEMENT_NODE && match(element, selectors))
+            if (element.nodeType == ELEMENT_NODE && match(element, selectors))
               return fromElement(element);
           } while (element = element.parentNode);
         }
@@ -494,19 +498,19 @@
       event.memo = memo || event.memo || { };
 
       // change checked state before calling handlers
-      if (type === 'click' && getNodeName(element) === 'INPUT' &&
+      if (type == 'click' && getNodeName(element) == 'INPUT' &&
           CHECKED_INPUT_TYPES[element.type]) {
         checked = element.checked;
         element.checked = !checked;
       }
 
       do {
-        id   = element.nodeType === ELEMENT_NODE ? element[DATA_ID_PROP] : getFuseId(element);
+        id   = element.nodeType == ELEMENT_NODE ? element[DATA_ID_PROP] : getFuseId(element);
         data = id && domData[id];
         ec   = data && data.events && data.events[type];
 
         // fire DOM Level 0
-        if (typeof element[attrName] === 'function' &&
+        if (typeof element[attrName] == 'function' &&
             !element[attrName]._isDispatcher) {
           // stop event if handler result is false
           if (element[attrName](event) === false) {
@@ -530,7 +534,7 @@
           }
           else if (isHostType(element, type)) {
             // temporarily remove handler so its not triggered
-            if (typeof element[attrName] === 'function') {
+            if (typeof element[attrName] == 'function') {
               backup = element[attrName];
               element[attrName] = null;
             }

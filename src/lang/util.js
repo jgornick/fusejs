@@ -23,7 +23,7 @@
       util.$R = fuse.Range;
     }
     if (fuse.dom) {
-      var doc = global.document;
+      var doc = window.document;
       util.$ = function $(object) {
         var objects, length = arguments.length;
         if (length > 1) {
@@ -41,7 +41,7 @@
 
       util.$$ = function $$(selectors) {
         var callback, context, args = slice.call(arguments, 0);
-        if (typeof args[args.length - 1] === 'function') {
+        if (typeof args[args.length - 1] == 'function') {
           callback = args.pop();
         }
         if (!isString(args[args.length - 1])) {

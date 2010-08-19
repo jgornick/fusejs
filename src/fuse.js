@@ -11,7 +11,7 @@
  * Built: <%= Built %>
  * ----------------------------------------------------------------------------*/
 
-(function(global) {
+(function(window) {
 
   // private vars
   var DATA_ID_PROP, Document, Element, Node, NodeList, Window,
@@ -35,11 +35,11 @@
 
   slice = [].slice,
 
-  setTimeout = global.setTimeout,
+  setTimeout = window.setTimeout,
 
   uid = 'uid' + String(+new Date).slice(0, 12),
 
-  userAgent = global.navigator && navigator.userAgent || '',
+  userAgent = window.navigator && navigator.userAgent || '',
 
   addNodeListMethod = NOOP,
 
@@ -74,7 +74,7 @@
   })(),
 
   isFunction = function isFunction(value) {
-    return toString.call(value) === '[object Function]';
+    return toString.call(value) == '[object Function]';
   },
 
   // Host objects can return type values that are different from their actual
@@ -82,7 +82,7 @@
   // types of object, function, or unknown.
   isHostType = function isHostType(object, property) {
     var type = typeof object[property];
-    return type === 'object' ? !!object[property] : !NON_HOST_TYPES[type];
+    return type == 'object' ? !!object[property] : !NON_HOST_TYPES[type];
   },
 
   prependList = function(list, value, result) {
@@ -118,7 +118,7 @@
   *
   * The version of [FuseJS](http://fusejs.com) that you're using (e.g., <%= Version %>).
   */
-  global.fuse = (function() {
+  window.fuse = (function() {
     var fuse = function fuse() { };
     fuse.version = '<%= Version %>';
     return fuse;
@@ -202,9 +202,11 @@
   //= require "lang/console"
   //= require "lang/hash"
   //= require "lang/range"
+  //= require "lang/script"
   //= require "lang/template"
   //= require "lang/timer"
 
+  //= require "lang/html"
   //= require "dom/dom"
   //= require "dom/features"
   //= require "dom/node"
@@ -264,7 +266,7 @@
 
 })(this);
 
-(function(global) {
+(function(window) {
   //= require "dom/event/dispatcher.js"
   //= require "dom/event/dom-loaded.js"
 })(this);

@@ -48,7 +48,7 @@
       var i = 0, link, links = doc.getElementsByTagName('LINK'),
        result = fuse.Array.fromNodeList(doc.getElementsByTagName('STYLE'));
       while (link = links[i++]) {
-        if (link.rel.toLowerCase() === 'stylesheet')
+        if (link.rel.toLowerCase() == 'stylesheet')
           result.push(link);
       }
       return result;
@@ -74,7 +74,7 @@
       }
       // Safari hits `loaded` while others may hit `interactive` or `complete`
       // and should be able to interact with the dom at that time.
-      else if ((event && event.type === 'DOMContentLoaded') ||
+      else if ((event && event.type == 'DOMContentLoaded') ||
           (FINAL_DOCUMENT_READY_STATES[doc.readyState] && isModifiable())) {
         readyStatePoller.clear();
         decoratedDoc.stopObserving('readystatechange', checkDomLoadedState);
@@ -243,7 +243,7 @@
               doc.body.appendChild(c.div);
 
               // when loaded clear cache entry
-              if (getStyle(c.div, 'marginTop') === '-1234px') {
+              if (getStyle(c.div, 'marginTop') == '-1234px') {
                 cache.splice(length, 1);
               }
 
@@ -264,14 +264,14 @@
     };
 
     Poller.prototype.clear = function() {
-      this.id != null && (this.id = global.clearTimeout(this.id));
+      this.id != null && (this.id = window.clearTimeout(this.id));
     };
 
     /*------------------------------------------------------------------------*/
 
-    if (doc.readyState === 'complete') {
+    if (doc.readyState == 'complete') {
       // fire dom:loaded and window load events if window is already loaded
-      return fuse(global).fire('load');
+      return fuse(window).fire('load');
     }
 
     if (envTest('ELEMENT_ADD_EVENT_LISTENER')) {
@@ -279,10 +279,10 @@
     }
     // Weak inference used as IE 6/7 have the operation aborted error
     else if (envTest('ELEMENT_DO_SCROLL') && !envTest('JSON')) {
-      // Avoid a potential browser hang when checking global.top (thanks Rich Dougherty)
+      // Avoid a potential browser hang when checking window.top (thanks Rich Dougherty)
       // The value of frameElement can be null or an object.
-      // Checking global.frameElement could throw if not accessible.
-      try { isFramed = global.frameElement != null; } catch(e) { }
+      // Checking window.frameElement could throw if not accessible.
+      try { isFramed = window.frameElement != null; } catch(e) { }
 
       // doScroll will not throw an error when in an iframe
       // so we rely on the event system to fire the dom:loaded event
