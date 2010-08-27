@@ -10,13 +10,7 @@
 
     CHANGEABLE_ELEMENTS = { 'INPUT': 1, 'SELECT': 1, 'TEXTAREA': 1 },
 
-    NON_BUBBLING_EVENTS = {
-      'change': 1,
-      'reset':  1,
-      'submit': 1,
-      'delegate:blur':  1,
-      'delegate:focus': 1
-    },
+    NON_BUBBLING_EVENTS = { 'delegate:blur': 1, 'delegate:focus': 1 },
 
     PROBLEM_ELEMENTS = {
       'LABEL':    1,
@@ -140,7 +134,10 @@
     }
     // JScript
     else if (envTest('ELEMENT_ATTACH_EVENT')) {
-      PROBLEM_ELEMENTS.FORM = 1;
+      PROBLEM_ELEMENTS.FORM =
+      NON_BUBBLING_EVENTS.change =
+      NON_BUBBLING_EVENTS.reset  =
+      NON_BUBBLING_EVENTS.submit = 1;
 
       addWatcher = function(element, data) {
         element.attachEvent('onbeforeactivate', onBeforeActivate);
@@ -155,11 +152,8 @@
 
     plugin.delegate          =
     Document.plugin.delegate = function delegate(type, selector, delegatee) {
-      var docId, ec, handler, handlers, i = -1,
-       element = this.raw || this,
-       id      = getFuseId(this),
-       data    = domData[id],
-       events  = data.events;
+      var handler,element = this.raw || this,
+       id = getFuseId(this), data = domData[id];
 
       // juggle arguments
       if (typeof selector == 'function') {
@@ -167,24 +161,12 @@
         selector = null;
       }
 
-      type = EVENT_TYPE_ALIAS[type] || type;
-      selector && (selector = String(selector));
-
-      // ensure it isn't in the stack already
-      if (events && (ec = events[type])) {
-        handlers = ec.handlers;
-        while (handler = handlers[++i]) {
-          if (handler._delegatee == delegatee && handler._selector == selector) {
-            return this;
-          }
-        }
-      }
-
       // indicate handler is a delegator and pass to Element#observe
       handler = createHandler(selector, delegatee);
       handler._delegatee = delegatee;
       handler._selector  = selector;
 
+      type = EVENT_TYPE_ALIAS[type] || type;
       plugin.observe.call(this, type, handler);
 
       // if not already watching on the element, add a watcher for

@@ -2,8 +2,15 @@
 
   eachKey =
   fuse.Object.each = (function() {
-    // use switch statement to avoid creating a temp variable
     var each;
+
+    function bind(fn, thisArg) {
+      return function(value, key, object) {
+        return fn.call(thisArg, value, key, object);
+      };
+    }
+
+    // use switch statement to avoid creating a temp variable
     switch (function() {
       var key, count = 0, klass = function() { this.toString = 1; };
       klass.prototype.toString = 1;
@@ -18,17 +25,19 @@
           'toLocaleString', 'toString', 'valueOf'
         ];
 
-        each = function each(object, callback) {
+        each = function each(object, callback, thisArg) {
           if (object) {
             var key, i = -1;
+            thisArg && (callback = bind(callback, thisArg));
             for (key in object) {
-              callback(object[key], key, object);
+              if (callback(object[key], key, object) === false) {
+                return object;
+              }
             }
             while(key = shadowed[++i]) {
-              // exit early if callback result is false
-              if (hasKey(object, key)) {
-                  callback(object[key], key, object);
-                
+              if (hasKey(object, key) &&
+                  callback(object[key], key, object) === false) {
+                break;
               }
             }
           }
@@ -43,10 +52,7 @@
         each = function each(object, callback, thisArg) {
           var key, keys = { }, skipProto = isFunction(object);
           if (object)  {
-            if (thisArg) {
-              var __callback = callback;
-              callback = function(v, k, o) { return __callback(v, k, o); };
-            }
+            thisArg && (callback = bind(callback, thisArg));
             for (key in object) {
               if (!(skipProto && key == 'prototype') &&
                   !hasKey(keys, key) && (keys[key] = 1) &&
@@ -64,10 +70,7 @@
         each = function each(object, callback, thisArg) {
           var key, skipProto = isFunction(object);
           if (object) {
-            if (thisArg) {
-              var __callback = callback;
-              callback = function(v, k, o) { return __callback(v, k, o); };
-            }
+            thisArg && (callback = bind(callback, thisArg));
             for (key in object) {
               if (!(skipProto && key == 'prototype') &&
                   callback(object[key], key, object) === false) {
@@ -237,7 +240,12 @@
       return destination;
     };
 
+    // ES5 15.2.4.2
+    // The erratum states Object#toString should return
+    // [object Null] and [object Undefined] for null and undefined values.
+    // However, Null and Undefined are *not* [[Class]] property values.
     Obj.getClassOf = function getClassOf(object) {
+      if (object == null) throw new TypeError;
       return fuse.String(toString.call(object).slice(8, -1));
     };
 
