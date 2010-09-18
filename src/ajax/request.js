@@ -48,21 +48,24 @@
 
   (function(plugin) {
 
-    var EVENT_TYPES  = ['abort', 'exception', 'failure', 'success', 'timeout'],
-     euid            = uid + '_error',
-     isSameOrigin    = fuse.Object.isSameOrigin,
-     reContentTypeJS = /^\s*(text|application)\/(x-)?(java|ecma)script(;|\s|$)/i,
-     reHTTP          = /^https?:/,
-     responders      = fuse.ajax.responders,
-     fireEvent       = fuse.Class.mixins.event.fire,
+    var EVENT_TYPES = ['abort', 'exception', 'failure', 'success', 'timeout'],
+     euid           = uid + '_error',
+     fireEvent      = fuse.Class.mixins.event.fire,
+     isSameOrigin   = fuse.Object.isSameOrigin,
+     responders     = fuse.ajax.responders,
+     reHTTP         = /^https?:/,
+     // content-type is case-insensitive
+     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.7
+     reContentTypeJS   = /^\s*(?:text|application)\/(x-)?(?:java|ecma)script(?:;|\s|$)/i,
+     reContentTypeJSON = /^\s*(?:application\/json)(?:;|\s|$)/i;
 
-    fireException = function(request, exception) {
+    function fireException(request, exception) {
       fireEvent.call(request, 'exception', request, exception);
       responders && responders.fire('exception', request, exception);
       // throw error if not caught by a request exception handler
       var handlers = request._events.exception;
       if (!handlers || !handlers.length) throw exception;
-    };
+    }
 
     /*------------------------------------------------------------------------*/
 
@@ -256,8 +259,8 @@
         // Request status/statusText have really bad cross-browser consistency.
         // Monsur Hossain has done an exceptional job cataloging the cross-browser
         // differences.
-        // http://monsur.com/blog/2007/12/28/xmlhttprequest-status-codes/
-        // http://blogs.msdn.com/ieinternals/archive/2009/07/23/The-IE8-Native-XMLHttpRequest-Object.aspx
+        // http://replay.waybackmachine.org/20090629230725/http://monsur.com/blog/2007/12/28/xmlhttprequest-status-codes/
+        // http://blogs.msdn.com/b/ieinternals/archive/2009/07/23/the-ie8-native-xmlhttprequest-object.aspx
 
         // Assume Firefox is throwing an error accessing status/statusText
         // caused by a 408 request timeout
@@ -334,13 +337,16 @@
 
           // set responseXML
           responseXML = xhr.responseXML;
-          if (responseXML) {
+
+          // IE will return an invalid XML object if the response
+          // content-type header is not text/xml
+          if (responseXML && isHostType(responseXML, 'documentElement')) {
             this.responseXML = responseXML;
           }
 
           // set responseJSON
           if (evalJSON == 'force' || evalJSON && hasText &&
-              contentType.indexOf('application/json') > -1) {
+              reContentTypeJSON.test(contentType)) {
             try {
               this.responseJSON = responseText.evalJSON(sanitizeJSON);
             } catch (e) {
@@ -350,7 +356,7 @@
 
           // eval javascript
           if (hasText && (evalJS == 'force' || evalJS && isSameOrigin(url) &&
-              contentType.match(reContentTypeJS))) {
+              reContentTypeJS.test(contentType))) {
 
             fuse.run('try{' + responseText.unfilterJSON() + '}catch(e){fuse.'  + euid + '=e}');
 

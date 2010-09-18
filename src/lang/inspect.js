@@ -1,7 +1,7 @@
   /*----------------------------- LANG: INSPECT ------------------------------*/
 
   (function() {
-    var strInspect,
+    var elemPlugin, eventPlugin, hashPlugin, strInspect,
 
     SPECIAL_CHARS = {
       '\b': '\\b',
@@ -19,6 +19,10 @@
 
     // charCodes 0-31 and \ and "
     reWithDoubleQuotes = /[\x00-\x1f\\"]/g,
+
+    arrPlugin = fuse.Array.plugin,
+
+    nlPlugin  = NodeList && NodeList.plugin || arrPlugin,
 
     strPlugin = fuse.String.plugin,
 
@@ -46,15 +50,32 @@
 
     strInspect =
     strPlugin.inspect = function inspect(useDoubleQuotes) {
-      // called Obj.inspect(fuse.String.plugin) or Obj.inspect(fuse.Array)
+      // called by Obj.inspect on fuse.String or its plugin object
       if (this == strPlugin || window == this || this == null) {
         return inspectPlugin(strPlugin);
       }
-      // called normally fuse.String(...).inspect()
+      // called normally
       var string = String(this);
       return fuse.String(useDoubleQuotes
         ? '"' + string.replace(reWithDoubleQuotes, escapeSpecialChars) + '"'
         : "'" + string.replace(reWithSingleQuotes, escapeSpecialChars) + "'");
+    };
+
+    arrPlugin.inspect = function inspect() {
+      // called by Obj.inspect on fuse.Array/fuse.dom.NodeList or its plugin object
+      var length, object, result, plugin = this == nlPlugin ? nlPlugin : arrPlugin;
+      if (this == plugin || window == this || this == null) {
+        return inspectPlugin(plugin);
+      }
+      // called normally
+      object = Object(this);
+      length = object.length >>> 0;
+      result = [];
+
+      while (length--) {
+        result[length] = fuse.Object.inspect(object[length]);
+      }
+      return fuse.String('[' + result.join(', ') + ']');
     };
 
     fuse.Object.inspect = function inspect(value) {
@@ -75,7 +96,7 @@
         // IE8 node constructors are typeof "object"
         try {
           classOf = toString.call(object);
-          if (classOf == '[object Object]' && typeof object.constructor == 'function') {
+          if (classOf == OBJECT_CLASS && typeof object.constructor == 'function') {
             result = [];
             eachKey(object, function(value, key) {
               hasKey(object, key) &&
@@ -97,28 +118,8 @@
       }
     };
 
-    addArrayMethods.callbacks.push(function(List) {
-      var plugin = List.plugin;
-      plugin.inspect = function inspect() {
-        // called Obj.inspect(fuse.Array.plugin) or Obj.inspect(fuse.Array)
-        if (this == plugin || window == this || this == null) {
-          return inspectPlugin(plugin);
-        }
-        // called normally fuse.Array(...).inspect()
-        var result = [], object = Object(this), length = object.length >>> 0;
-        while (length--) {
-          result[length] = fuse.Object.inspect(object[length]);
-        }
-        return fuse.String('[' + result.join(', ') + ']');
-      };
-
-      // prevent JScript bug with named function expressions
-      var inspect = null;
-    });
-
     if (fuse.Class.mixins.enumerable) {
       fuse.Class.mixins.enumerable.inspect = function inspect() {
-        // called normally or called Obj.inspect(fuse.Class.mixins.enumerable)
         return isFunction(this._each)
           ? fuse.String('#<Enumerable:' + this.toArray().inspect() + '>')
           : inspectPlugin(fuse.Class.mixins.enumerable);
@@ -126,13 +127,13 @@
     }
 
     if (fuse.Hash) {
-      var hashPlugin = fuse.Hash.plugin;
+      hashPlugin = fuse.Hash.plugin;
       hashPlugin.inspect = function inspect() {
-        // called Obj.inspect(fuse.Hash.plugin) or generic if added later
+        // called by Obj.inspect() on fuse.Hash or its plugin object
         if (this == hashPlugin || window == this || this == null) {
           return inspectPlugin(hashPlugin);
         }
-        // called normally fuse.Hash(...).inspect()
+        // called normally
         var pair, i = -1, pairs = this._pairs, result = [];
         while (pair = pairs[++i]) {
           result[i] = pair[0].inspect() + ': ' + fuse.Object.inspect(pair[1]);
@@ -142,13 +143,13 @@
     }
 
     if (fuse.dom) {
-      var elemPlugin = fuse.dom.Element.plugin;
+      elemPlugin = HTMLElement.plugin;
       elemPlugin.inspect = function inspect() {
-        // called Obj.inspect(Element.plugin) or Obj.inspect(Element)
+        // called by Obj.inspect() on a fuse Element class or its plugin object
         if (this == elemPlugin || window == this || this == null) {
           return inspectPlugin(this);
         }
-        // called normally Element.inspect(element)
+        // called normally
         var element = this.raw || this,
          id         = element.id,
          className  = element.className,
@@ -165,9 +166,8 @@
     }
 
     if (fuse.dom.Event) {
-      var eventPlugin = fuse.dom.Event.plugin;
+      eventPlugin = fuse.dom.Event.plugin;
       eventPlugin.inspect = function inspect() {
-        // called Obj.inspect(Event.plugin) or called normally event.inspect()
         return this == eventPlugin
           ? inspectPlugin(eventPlugin)
           : '[object Event]';

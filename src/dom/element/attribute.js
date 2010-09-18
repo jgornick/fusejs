@@ -1,19 +1,15 @@
-  /*--------------------------- ELEMENT: ATTRIBUTE ---------------------------*/
-
-  Element.Attribute = {
-    'contentNames': { },
-    'read':         { },
-    'write':        { },
-    'names':        { }
-  };
+  /*------------------------ HTML ELEMENT: ATTRIBUTE -------------------------*/
 
   (function(plugin) {
 
-    var CHECKED_INPUT_TYPES = { 'checkbox': 1, 'radio': 1 },
+    var ATTR_DEFAULT_VALUE_PROP =
+      { 'selected': 'defaultSelected', 'value': 'defaultValue' },
 
-    ATTR_DEFAULT_VALUE_PROP = { 'selected': 'defaultSelected', 'value': 'defaultValue' },
+    ATTR_NAME = domData['1'].attributes =
+      { 'contentNames': { }, 'read': { }, 'write': { }, 'names': { } },
 
-    TAG_WITH_DEFAULT_VALUE_PROP = { 'OPTION': 'selected', 'TEXTAREA': 'value' },
+    TAG_WITH_DEFAULT_VALUE_PROP =
+      { 'OPTION': 'selected', 'TEXTAREA': 'value' },
 
     // http://www.w3.org/TR/html4/index/attributes.html
     TAG_PROP_DEFAULT_VALUE = (function() {
@@ -34,28 +30,25 @@
         'SELECT': { 'size': '0', 'tabindex': '0' }
       };
 
-      T['AREA'] = T['A'];
-      T['COLGROUP'] = T['COL'];
-      T['TH'] = T['TD'];
-      T['IFRAME'] = T['FRAME'];
-      T['TEXTAREA'] = T['OBJECT']; 
-
+      T.AREA = T.A;
+      T.COLGROUP = T.COL;
+      T.TH = T.TD;
+      T.IFRAME = T.FRAME;
+      T.TEXTAREA = T.OBJECT; 
       return T;
     })();
-
 
     plugin.hasAttribute = function hasAttribute(name) {
       return (this.raw || this).hasAttribute(name);  
     };
 
     plugin.getAttribute = function getAttribute(name) {
-      var result, defaults, T = Element.Attribute,
-       element = this.raw || this,
-       contentName = T.contentNames[name] || name;
+      var result, defaults, element = this.raw || this,
+       contentName = ATTR_NAME.contentNames[name] || name;
 
-      name = T.names[name] || name;
-      if (T.read[name]) {
-        result = T.read[name](element, contentName);
+      name = ATTR_NAME.names[name] || name;
+      if (ATTR_NAME.read[name]) {
+        result = ATTR_NAME.read[name](element, contentName);
       }
       else if (!((result = element.getAttributeNode(name)) &&
           result.specified && (result = result.value)) &&
@@ -66,13 +59,13 @@
     };
 
     plugin.removeAttribute = function removeAttribute(name) {
-      (this.raw || this).removeAttribute(Element.Attribute.contentNames[name] || name);
+      (this.raw || this).removeAttribute(ATTR_NAME.contentNames[name] || name);
       return this;
     };
 
     plugin.setAttribute = function setAttribute(name, value) {
       var contentName, isRemoved, node,
-       element = this.raw || this, attributes = { }, T = Element.Attribute;
+       element = this.raw || this, attributes = { };
 
       if (isHash(name)) {
         attributes = name._object;
@@ -84,12 +77,12 @@
 
       for (name in attributes) {
         value = attributes[name];
-        contentName = T.contentNames[name] || name;
-        name = T.names[name] || name;
+        contentName = ATTR_NAME.contentNames[name] || name;
+        name = ATTR_NAME.names[name] || name;
         isRemoved = value === false || value == null;
 
-        if (T.write[name]) {
-          if (T.write[name](element, value, isRemoved) === false) {
+        if (ATTR_NAME.write[name]) {
+          if (ATTR_NAME.write[name](element, value, isRemoved) === false) {
             element.removeAttribute(contentName);
           }
         }
@@ -125,7 +118,7 @@
         }
         // IE6/7 fails to detect value attributes as well as colspan and rowspan
         // attributes with a value of 1
-        node = node.getAttributeNode(Element.Attribute.names[name] || name);
+        node = node.getAttributeNode(ATTR_NAME.names[name] || name);
         return !!node && node.specified;
       };
     }
@@ -139,8 +132,9 @@
 
   /*--------------------------------------------------------------------------*/
 
-  (function(T) {
-    var plugin = Element.plugin,
+  (function(plugin) {
+
+    var T = domData['1'].attributes,
 
     getAttribute = function(element, contentName) {
       return element.getAttribute(contentName);
@@ -251,7 +245,7 @@
 
     // mandate getAttribute/setAttribute for value
     // http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-26091157
-    Element.extendByTag(['input', 'textarea'], function() {
+    extendByTag(['input', 'textarea'], function() {
       var __getAttribute = plugin.getAttribute,
        __setAttribute = plugin.setAttribute,
 
@@ -321,7 +315,7 @@
 
     // setter for button element value
     if (envTest('BUTTON_VALUE_CHANGES_AFFECT_INNER_CONTENT')) {
-      Element.extendByTag('button', function() {
+      extendByTag('button', function() {
         var __setAttribute = plugin.setAttribute,
          setValue = setNode('value'),
 
@@ -348,4 +342,4 @@
           T.names[contentName]  = lower;
       });
     }
-  })(Element.Attribute);
+  })(Element.plugin);

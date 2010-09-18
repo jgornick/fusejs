@@ -4,8 +4,6 @@
 
     var BUTTON_TYPES    = { 'image': 1, 'reset': 1, 'submit': 1 },
 
-    EVENT_TYPE_ALIAS    = { 'blur': 'delegate:blur', 'focus': 'delegate:focus' },
-
     REAL_EVENT_TYPE     = { 'delegate:blur': 'blur', 'delegate:focus': 'focus' },
 
     CHANGEABLE_ELEMENTS = { 'INPUT': 1, 'SELECT': 1, 'TEXTAREA': 1 },
@@ -150,8 +148,8 @@
       };
     }
 
-    plugin.delegate          =
-    Document.plugin.delegate = function delegate(type, selector, delegatee) {
+    plugin.delegate =
+    HTMLDocument.plugin.delegate = function delegate(type, selector, delegatee) {
       var handler,element = this.raw || this,
        id = getFuseId(this), data = domData[id];
 
@@ -161,7 +159,6 @@
         selector = null;
       }
 
-      // indicate handler is a delegator and pass to Element#observe
       handler = createHandler(selector, delegatee);
       handler._delegatee = delegatee;
       handler._selector  = selector;
@@ -178,8 +175,8 @@
       return this;
     };
 
-    plugin.stopDelegating          =
-    Document.plugin.stopDelegating = function stopDelegating(type, selector, delegatee) {
+    plugin.stopDelegating =
+    HTMLDocument.plugin.stopDelegating = function stopDelegating(type, selector, delegatee) {
       var ec, handler, handlers, i = -1,
        element = this.raw || this,
        isEmpty = true,
@@ -263,4 +260,4 @@
 
     // prevent JScript bug with named function expressions
     var delegate = null, stopDelegating = null;
-  })(Element.plugin);
+  })(HTMLElement.plugin);

@@ -1,4 +1,4 @@
-  /*-------------------------------- ELEMENT ---------------------------------*/
+  /*------------------------------ HTML ELEMENT ------------------------------*/
 
   // add/pave statics
   (function() {
@@ -40,33 +40,42 @@
       return addToNodeList.apply(this, arguments);
     };
 
-    Element.addMixins = addMixins;
-    Element.addPlugins = addPlugins;
-    Element.updateGenerics = Node.updateGenerics;
+    Element.addMixins =
+    HTMLElement.addMixins = addMixins;
+
+    Element.addPlugins =
+    HTMLElement.addPlugins = addPlugins;
   })();
 
   /*--------------------------------------------------------------------------*/
 
   (function(plugin) {
-    var idCounter = 0;
+
+    var counter = 0;
 
     plugin.identify = function identify() {
       // use getAttribute to avoid issues with form elements and
       // child controls with ids/names of "id"
-      var element = this.raw || this,
+      var ownerDoc, element = this.raw || this,
        id = plugin.getAttribute.call(this, 'id');
-      if (id.length) return id;
+      if (id != '') return id;
 
-      var ownerDoc = element.ownerDocument;
-      do { id = 'anonymous_element_' + idCounter++; }
-      while (ownerDoc.getElementById(id));
+      ownerDoc = element.ownerDocument;
+      while (ownerDoc.getElementById(id = 'anonymous_element_' + counter++)) { }
 
       plugin.setAttribute.call(this, 'id', id);
       return fuse.String(id);
     };
 
     plugin.isEmpty = function isEmpty() {
-      return (this.raw || this).innerHTML == false;
+      var element = this.raw || this, node = element.firstChild;
+      while (node) {
+        if (node.nodeType != TEXT_NODE || node.data != false) {
+          return false;
+        }
+        node = node.nextSibling;
+      }
+      return true;
     };
 
     plugin.isDetached = function isDetached() {
@@ -75,7 +84,13 @@
         plugin.contains.call(element.ownerDocument, element));
     };
 
-    if (envTest('ELEMENT_SOURCE_INDEX', 'DOCUMENT_ALL_COLLECTION')) {
+    if (envTest('ELEMENT_INNER_HTML')) {
+      plugin.isEmpty = function isEmpty() {
+        return (this.raw || this).innerHTML == false;
+      };
+    }
+
+    if (envTest('ELEMENT_SOURCE_INDEX')) {
       plugin.isDetached = function isDetached() {
         var element = this.raw || this;
         return element.ownerDocument.all[element.sourceIndex] != element;

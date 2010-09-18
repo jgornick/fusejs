@@ -24,11 +24,34 @@
 
   /*--------------------------------------------------------------------------*/
 
+  CHECKED_INPUT_TYPES = { 'checkbox': 1, 'radio': 1 };
+
+  EVENT_TYPE_ALIAS = { 'blur': 'delegate:blur', 'focus': 'delegate:focus' },
+
+  INPUT_BUTTONS = { 'button': 1, 'image': 1, 'reset':  1, 'submit': 1 };
+
   DATA_ID_PROP =
     envTest('ELEMENT_UNIQUE_NUMBER') ? 'uniqueNumber' : '_fuseId';
 
   PARENT_NODE =
     isHostType(fuse._docEl, 'parentElement') ? 'parentElement' : 'parentNode';
+
+  // Safari 2.0.x returns `Abstract View` instead of `window`
+  PARENT_WINDOW =
+    isHostType(fuse._doc, 'defaultView') && fuse._doc.defaultView === window ? 'defaultView' :
+    isHostType(fuse._doc, 'parentWindow') ? 'parentWindow' : null;
+
+  destroyElement = function(element, parentNode) {
+    parentNode || (parentNode = element[PARENT_NODE]);
+    parentNode && parentNode.removeChild(element);
+  };
+
+  emptyElement = function(element) {
+    var child;
+    while (child = element.lastChild) {
+      destroyElement(child, element);
+    }
+  };
 
   getDocument = function getDocument(element) {
     return element.ownerDocument || element.document ||
@@ -106,26 +129,31 @@
       .data = text == null ? '' : text;
   };
 
-  // IE's uniqueNumber property starts at 1 when the browser session begins.
-  // To avoid a conflict with the document's data id of 1 we initialize
-  // uniqueNumber on a dummy element.
-  fuse._div[DATA_ID_PROP];
+  if (PARENT_WINDOW) {
+    getWindow = function getWindow(element) {
+      return getDocument(element)[PARENT_WINDOW];
+    };
+  }
 
-  // Safari 2.0.x returns `Abstract View` instead of `window`
-  if (isHostType(fuse._doc, 'defaultView') && fuse._doc.defaultView === window) {
-    getWindow = function getWindow(element) {
-      return getDocument(element).defaultView;
+  if (envTest('ELEMENT_INNER_HTML')) {
+    emptyElement = function(element) {
+      element.innerHTML = '';
     };
-  } else if (isHostType(fuse._doc, 'parentWindow')) {
-    getWindow = function getWindow(element) {
-      return getDocument(element).parentWindow;
-    };
+
+    destroyElement = (function() {
+      var trash = document.createElement('div');
+      return function(element) {
+        trash.appendChild(element);
+        trash.innerHTML = '';
+      };
+    })();
   }
 
   if (envTest('ELEMENT_SCRIPT_HAS_TEXT_PROPERTY')) {
     getScriptText = function(element) {
       return element.text;
     };
+
     setScriptText = function(element, text) {
       element.text = text || '';
     };

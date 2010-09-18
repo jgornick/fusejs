@@ -1,12 +1,10 @@
-  /*-------------------------- ELEMENT: MODIFICATION -------------------------*/
+  /*----------------------- HTML ELEMENT: MODIFICATION -----------------------*/
 
   (function(plugin) {
 
     var scripts,
 
-    TREAT_AS_STRING = { '[object Number]': 1, '[object String]': 1 },
-
-    CHECKED_INPUT_TYPES = { 'checkbox': 1, 'radio': 1 },
+    DO_NOT_DECORATE = { 'decorate': false },
 
     PARENT_NODE_AS_CONTEXT = { 'appendSibling': 1, 'prependSibling': 1 },
 
@@ -16,8 +14,8 @@
 
     INSERTABLE_NODE_TYPES = { '1': 1, '3': 1, '8': 1, '10': 1, '11': 1 },
 
-    ELEMENT_EVALS_SCRIPT_FROM_INNERHTML =
-      envTest('ELEMENT_EVALS_SCRIPT_FROM_INNERHTML'),
+    ELEMENT_EVALS_SCRIPT_FROM_INNER_HTML =
+      envTest('ELEMENT_EVALS_SCRIPT_FROM_INNER_HTML'),
 
     ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT =
       envTest('ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT'),
@@ -25,102 +23,146 @@
     ELEMENT_SCRIPT_REEVALS_TEXT =
       envTest('ELEMENT_SCRIPT_REEVALS_TEXT'),
 
-    ELEMENT_INNERHTML_BUGGY = (function() {
-      var T = false, o = { };
-      if (envTest('ELEMENT_COLGROUP_INNERHTML_BUGGY')) {
-        (T = T || o).COLGROUP = 1;
-      }
-      if (envTest('ELEMENT_OPTGROUP_INNERHTML_BUGGY')) {
-        (T = T || o).OPTGROUP = 1;
-      }
-      if (envTest('ELEMENT_SELECT_INNERHTML_BUGGY')) {
-        (T = T || o).SELECT = 1;
-      }
-      if (envTest('ELEMENT_TABLE_INNERHTML_BUGGY')) {
-        (T = T || o).TABLE = T.TBODY = T.TR = T.TD = T.TFOOT = T.TH = T.THEAD = 1;
+    ELEMENT_INNER_HTML_BUGGY = (function() {
+      var T = !envTest('ELEMENT_INNER_HTML'), o = { };
+      if (!T) {
+        if (envTest('ELEMENT_COLGROUP_INNER_HTML_BUGGY')) {
+          (T = T || o).COLGROUP = 1;
+        }
+        if (envTest('ELEMENT_OPTGROUP_INNER_HTML_BUGGY')) {
+          (T = T || o).OPTGROUP = 1;
+        }
+        if (envTest('ELEMENT_SELECT_INNER_HTML_BUGGY')) {
+          (T = T || o).SELECT = 1;
+        }
+        if (envTest('ELEMENT_TABLE_INNER_HTML_BUGGY')) {
+          (T = T || o).TABLE = T.TBODY = T.TR = T.TD = T.TFOOT = T.TH = T.THEAD = 1;
+        }
       }
       return T;
     })(),
 
-    getFragmentFromHTML = fuse.dom.getFragmentFromHTML,
-
-    getByTagName = function(node, tagName) {
-      var result = [], child = node.firstChild, upper = tagName.toUpperCase();
-      while (child) {
-        if (getNodeName(child) == upper) {
-          result.push(child);
-        }
-        else if (typeof child.getElementsByTagName != 'undefined') {
-          // concatList implementation for nodeLists
-          var i = 0, pad = result.length, nodes = child.getElementsByTagName(tagName);
-          while (result[pad + i] = nodes[i++]) { }
-          result.length--;
-        }
-        child = child.nextSibling;
-      }
-      return result;
-    },
+    htmlPlugin = HTMLElement.plugin,
 
     cloneNode = function(source) {
       return source.cloneNode(false);
     },
 
-    createCloner = function() {
-      return function(source, deep, isData, isEvents, excludes, context) {
-        var addDispatcher, data, id, length, node, nodes, srcData, srcEvents, i = -1,
-         element = cloneNode(source, excludes, null, context);
+    cloner = function(source, deep, isData, isEvents, excludes, context) {
+      var addDispatcher, child, childQueue, children, data, i, id, j,
+       newQueue, parentNode, parentQueue, srcData, srcEvents, k = 0,
+       result = cloneNode(source, excludes, null, context);
 
-        if (excludes) {
-          length = excludes.length;
-          while (length--) {
-            plugin.removeAttribute.call(element, excludes[length]);
+      if (excludes) {
+        i = excludes.length;
+        while (i--) {
+          plugin.removeAttribute.call(result, excludes[i]);
+        }
+      }
+      if (isData || isEvents) {
+        srcData = domData[getFuseId(source, true)];
+        srcEvents = srcData && srcData.events;
+
+        if (srcData && isData) {
+          id || (id = getFuseId(result));
+          data = domData[id];
+
+          delete srcData.events;
+          fuse.Object.extend(data, srcData);
+          srcEvents && (srcData.events = srcEvents);
+        }
+        if (srcEvents && isEvents) {
+          id   || (id = getFuseId(result));
+          data || (data = domData[id]);
+          addDispatcher = fuse.dom.Event._addDispatcher;
+
+          // copy delegation watcher
+          if (srcData._isWatchingDelegation) {
+            fuse.dom.Event._addWatcher(result, data);
+          }
+          // copy events
+          for (i in srcEvents) {
+            addDispatcher(result, i, null, id);
+            data.events[i].handlers = srcEvents[i].handlers.slice(0);
           }
         }
+      }
 
-        if (isData || isEvents) {
-          srcData = domData[getFuseId(source, true)];
-          srcEvents = srcData && srcData.events;
+      // http://www.jslab.dk/articles/non.recursive.preorder.traversal.part4
+      if (deep) {
+        parentNode  = result;
+        childQueue  = source.childNodes;
+        parentQueue = [parentNode, childQueue.length - 1];
 
-          if (srcData && isData) {
-            id || (id = getFuseId(element));
-            data = domData[id];
+        while (childQueue.length) {
+          // drill down through the queued descendant children
+          i = -1; newQueue = [];
+          while (child = childQueue[++i]) {
+            j = -1;
+            children = child.childNodes;
+            length   = children.length;
+            child    = child.nodeType == ELEMENT_NODE
+              ? cloner(child, false, isData, isEvents, excludes, context)
+              : child.cloneNode(false);
 
-            delete srcData.events;
-            fuse.Object.extend(data, srcData);
-            srcEvents && (srcData.events = srcEvents);
-          }
-          if (srcEvents && isEvents) {
-            id   || (id = getFuseId(element));
-            data || (data = domData[id]);
-
-            // copy delegation watcher
-            if (srcData._isWatchingDelegation) {
-              fuse.dom.Event._addWatcher(element, data);
+            // jump to the next queued parent if starting a new child queue
+            // or passed the child count of the current parent
+            if ((i == 0 || i > parentQueue[k + 1]) && parentQueue[k + 2]) {
+              parentNode = parentQueue[k += 2];
             }
-            // copy events
-            addDispatcher = fuse.dom.Event._addDispatcher;
-            eachKey(srcEvents, function(ec, type) {
-              addDispatcher(element, type, null, id);
-              data.events[type].handlers = ec.handlers.slice(0);
-            });
+            // if the child has children add it along with the last
+            // childQueue index of its children to the parents queue
+            if (length) {
+              parentQueue.push(child, newQueue.length + length - 1);
+            }
+            // queue children of descendants
+            while (++j < length) {
+              newQueue.push(children[j]);
+            }
+            parentNode.appendChild(child);
           }
+          childQueue = newQueue;
         }
-
-  		  if (deep) {
-  		    cloner = createCloner();
-  		    nodes  = source.childNodes;
-    		  while (node = nodes[++i]) {
-    	      element.appendChild(node.nodeType == ELEMENT_NODE
-    	        ? cloner(node, deep, isData, isEvents, excludes, context)
-    	        : node.cloneNode(false));
-    		  }
-  		  }
-  			return element;
-      };
+      }
+      return result;
     },
 
     getScripts = function(element) {
-      return getNodeName(element) == 'SCRIPT' ? [element] : getByTagName(element, 'script');
+      var child, i, pad, nodes, result = [];
+      if (getNodeName(element) == 'SCRIPT') {
+        result[0] = element;
+      }
+      else {
+        child = element.firstChild;
+        while (child) {
+          if (getNodeName(child) == 'SCRIPT') {
+            result.push(child);
+          }
+          else if (typeof child.getElementsByTagName != 'undefined') {
+            // concatList implementation for nodeLists
+            i = 0; pad = result.length; nodes = child.getElementsByTagName('script');
+            while (result[pad + i] = nodes[i++]) { }
+            result.length--;
+          }
+          child = child.nextSibling;
+        }
+      }
+      return result;
+    },
+
+    purgeDescendants = function(element) {
+      var data, id, i = -1,
+       elements = element.getElementsByTagName('*');
+
+      while (element = elements[++i]) {
+        if (element.nodeType == ELEMENT_NODE) {
+          id = getFuseId(element, true);
+          if (data = domData[id]) {
+            data.events && htmlPlugin.stopObserving.call(element);
+            delete domData[id];
+          }
+        }
+      }
     },
 
     runScripts = function(element) {
@@ -137,34 +179,44 @@
     },
 
     toNode = function(content, context) {
-      var result, skipScripts, classOf = toString.call(content);
+      var result, skipScripts;
       scripts = null;
 
-      if (TREAT_AS_STRING[classOf]) {
-        result = getFragmentFromHTML(classOf == '[object String]' ? content : String(content), context);
-        // skip evaling scripts created from a string in Firefox 3.x
-        skipScripts = ELEMENT_EVALS_SCRIPT_FROM_INNERHTML;
-      }
-      else {
-        result = content && content.raw || content || { };
-        // fix evaling inserted script elements in Safari <= 2.0.2 and Firefox 2.0.0.2
-        skipScripts = !ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT;
-      }
-      if (INSERTABLE_NODE_TYPES[result.nodeType]) {
-        !skipScripts && (scripts = getScripts(result));
-        return result;
+      if (content || content == '0') {
+        if (content.nodeName) {
+          result = content && content.raw || content || { };
+          // fix evaling inserted script elements in Safari <= 2.0.2 and Firefox 2.0.0.2
+          skipScripts = !ELEMENT_SCRIPT_FAILS_TO_EVAL_TEXT;
+        }
+        else {
+          result = getFragmentFromHTML(content, context);
+          // skip evaling scripts created from a string in Firefox 3.x
+          skipScripts = ELEMENT_EVALS_SCRIPT_FROM_INNER_HTML;
+        }
+        if (INSERTABLE_NODE_TYPES[result.nodeType]) {
+          !skipScripts && (scripts = getScripts(result));
+          return result;
+        }
       }
     },
 
-    cloner = createCloner();
+    updateElement = function(element, content) {
+      var child;
+      purgeDescendants(element);
+      while (child = element.lastChild) {
+        destroyElement(child, element);
+      }
+      if (content = toNode(content, element)) {
+        element.appendChild(content);
+        runScripts(element);
+      }
+    };
 
     /*------------------------------------------------------------------------*/
 
     plugin.cleanWhitespace = function cleanWhitespace() {
       // removes whitespace-only text node children
-      var nextNode, element = this.raw || this,
-       node = element.firstChild;
-
+      var nextNode, element = this.raw || this, node = element.firstChild;
       while (node) {
         nextNode = node.nextSibling;
         if (node.nodeType == TEXT_NODE && node.data == false) {
@@ -176,37 +228,44 @@
     };
 
     plugin.clone = function clone(deep) {
-      var context, excludes, element = this.raw || this;
+      var context, data, events, excludes, element = this.raw || this;
       if (deep && typeof deep == 'object') {
+        context = deep.context;
+        data = deep.data;
+        events = deep.events;
         excludes = deep.excludes;
-        context  = deep.context || getDocument(element);
+        deep = deep.data;
         if (excludes && !isArray(excludes)) {
           excludes = [excludes];
         }
-        result = cloner(element, deep.deep, deep.data, deep.events, excludes, context);
-      } else {
-        result = cloner(element, deep, null, null, null, getDocument(element));
       }
-      return fromElement(result);
+      return fromElement(cloner(element, deep, data, events, excludes, context || getDocument(element)));
+    };
+
+    plugin.destroy = function() {
+      var element = this.raw || this;
+      destroyElement(plugin.purge.call(element), element[PARENT_NODE]);
+      this.raw && (this.raw = null);
+      return null;
     };
 
     plugin.prependChildTo = function prependChildTo(content) {
-      fuse(content).prependChild(this);
+      content && plugin.prependChild.call(content.raw || fuse(content, DO_NOT_DECORATE), this);
       return this;
     };
 
     plugin.appendChildTo = function appendChildTo(content) {
-      fuse(content).appendChild(this);
+      content && plugin.appendChild.call(content.raw || fuse(content, DO_NOT_DECORATE), this);
       return this;
     };
 
     plugin.prependSiblingTo = function prependSiblingTo(content) {
-      fuse(content).prependSibling(this);
+      content && plugin.prependSibling.call(content.raw || fuse(content, DO_NOT_DECORATE), this);
       return this;
     };
 
     plugin.appendSiblingTo = function appendSiblingTo(content) {
-      fuse(content).appendSibling(this);
+      content && plugin.appendSibling.call(content.raw || fuse(content, DO_NOT_DECORATE), this);
       return this;
     };
 
@@ -246,6 +305,19 @@
       return this;
     };
 
+    plugin.purge = function purge() {
+      var element = this.raw || this,
+       id = getFuseId(element, true),
+       data = domData[id];
+
+      if (data) {
+        data.events && htmlPlugin.stopObserving.call(element);
+        delete domData[id];
+      }
+      purgeDescendants(element);
+      return this;
+    };
+
     plugin.remove = function remove() {
       var element = this.raw || this, parentNode = element[PARENT_NODE];
       parentNode && parentNode.removeChild(element);
@@ -267,9 +339,8 @@
 
     plugin.update = function update(content) {
       var element = this.raw || this;
-      if (content == null) {
-        content = '';
-      }
+      content || content == '0' || (content = '');
+
       if (getNodeName(element) == 'SCRIPT') {
         setScriptText(element, content.nodeType == TEXT_NODE ?
           (content.raw || content).data : content);
@@ -279,12 +350,12 @@
         }
       }
       else {
-        if (TREAT_AS_STRING[toString.call(content)]) {
-          element.innerHTML = content;
-        }
-        else if (INSERTABLE_NODE_TYPES[content.nodeType]) {
+        purgeDescendants(element);
+        if (INSERTABLE_NODE_TYPES[content.nodeType]) {
           element.innerHTML = '';
           element.appendChild(content.raw || content);
+        } else {
+          element.innerHTML = content;
         }
         scripts = getScripts(element);
         runScripts(element);
@@ -293,15 +364,19 @@
     };
 
     plugin.wrap = function wrap(wrapper, attributes) {
-      var rawWrapper, element = this.raw || this, parentNode = element[PARENT_NODE];
+      var rawWrapper, element = this.raw || this, 
+       parentNode = element[PARENT_NODE],
+       options = { 'attrs': attributes, 'context': element }
+
       if (isString(wrapper)) {
-        wrapper = Element(wrapper, { 'attrs': attributes, 'context': element });
+        wrapper = Element(wrapper, options);
       }
       if (isElement(wrapper)) {
         wrapper = plugin.setAttribute.call(wrapper, attributes);
       }
       else {
-        wrapper = Element('div', { 'attrs': wrapper, 'context': element });
+        options.attrs = wrapper;
+        wrapper = HTMLElement('div', options);
       }
       rawWrapper = wrapper.raw || wrapper;
       if (parentNode) {
@@ -314,18 +389,18 @@
     /*------------------------------------------------------------------------*/
 
     // Fix browsers with buggy innerHTML implementations
-    if (ELEMENT_INNERHTML_BUGGY) {
+    if (ELEMENT_INNER_HTML_BUGGY === true) {
+      plugin.update = function update(content) {
+        updateElement(this.raw || this, content);
+        return this;
+      };
+    }
+    else if (ELEMENT_INNER_HTML_BUGGY) {
       var __update = plugin.update;
       plugin.update = function update(content) {
-        var element = this.raw || this, nodeName = getNodeName(element);
-        if (ELEMENT_INNERHTML_BUGGY[nodeName]) {
-          while (element.lastChild) {
-            element.removeChild(element.lastChild);
-          }
-          if (content = toNode(content, element)) {
-            element.appendChild(content);
-            runScripts(element);
-          }
+        var element = this.raw || this;
+        if (ELEMENT_INNER_HTML_BUGGY[getNodeName(element)]) {
+          updateElement(element, content);
         } else {
           __update.call(this, content);
         }
@@ -354,7 +429,8 @@
           if (setType) attributes.type = plugin.getAttribute.call(source, 'type');
         }
 
-        element = Element(nodeName, { 'attrs': attributes, 'context': context, 'decorate': false });
+        element = Element(nodeName,
+          { 'attrs': attributes, 'context': context, 'decorate': false });
 
         // avoid mergeAttributes because it is buggy :/
         attributes = source.attributes || { };
@@ -379,36 +455,41 @@
 
         // copy troublesome attributes/properties
         excludes = excludes && ' ' + excludes.join(' ') + ' ' || '';
-  		  if (nodeName == 'INPUT') {
-  		    if (excludes.indexOf(' value ') == -1) {
-  		      element.defaultValue = source.defaultValue;
-  		      element.value = source.value;
-  		    }
-  		    if (CHECKED_INPUT_TYPES[element.type] &&
-  		        excludes.indexOf(' checked ') == -1) {
-  		      element.defaultChecked = source.defaultChecked;
-  		      element.checked = source.checked;
-  		    }
-  		  }
-  		  else if (prop = PROPS_TO_COPY[nodeName] &&
-  		      excludes.indexOf(' ' + prop + ' ') == -1) {
-		      defaultProp = DEFAULTS_TO_COPY[prop];
-		      element[defaultProp]  = source[defaultProp];
-		      element[prop] = source[prop];
-  		  }
-  		  return element;
+        if (nodeName == 'INPUT') {
+          if (excludes.indexOf(' value ') == -1) {
+            element.defaultValue = source.defaultValue;
+            element.value = source.value;
+          }
+          if (CHECKED_INPUT_TYPES[element.type] &&
+              excludes.indexOf(' checked ') == -1) {
+            element.defaultChecked = source.defaultChecked;
+            element.checked = source.checked;
+          }
+        }
+        else if (prop = PROPS_TO_COPY[nodeName] &&
+            excludes.indexOf(' ' + prop + ' ') == -1) {
+          defaultProp = DEFAULTS_TO_COPY[prop];
+          element[defaultProp]  = source[defaultProp];
+          element[prop] = source[prop];
+        }
+        return element;
       };
     }
 
     // prevent JScript bug with named function expressions
-    var append =       null,
-     cleanWhitespace = null,
-     clone =           null,
-     insert =          null,
-     insertAfter =     null,
-     insertBefore =    null,
-     prepend =         null,
-     remove =          null,
-     replace =         null,
-     wrap =            null;
+    var appendChild =   null,
+     appendChildTo =    null,
+     appendSibling =    null,
+     appendSiblingTo =  null,
+     cleanWhitespace =  null,
+     clone =            null,
+     destroy =          null,
+     prependChild =     null,
+     prependChildTo =   null,
+     prependSibling =   null,
+     prependSiblingTo = null,
+     purge =            null,
+     remove =           null,
+     replace =          null,
+     wrap =             null;
   })(Element.plugin);

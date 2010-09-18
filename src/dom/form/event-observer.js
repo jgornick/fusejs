@@ -1,9 +1,7 @@
   /*-------------------------- FORM: EVENT OBSERVER --------------------------*/
 
-  (function(Form, Field) {
-    var CHECKED_INPUT_TYPES = { 'checkbox': 1, 'radio': 1 },
-
-    BaseEventObserver = fuse.Class(function() {
+  (function() {
+    var BaseEventObserver = fuse.Class(function() {
       var BaseEventObserver = function BaseEventObserver(element, callback) {
         var member, name, i = -1,
          eventObserver = this, onElementEvent = this.onElementEvent;
@@ -67,7 +65,7 @@
 
     /*------------------------------------------------------------------------*/
 
-    Field.EventObserver = (function() {
+    HTMLInputElement.EventObserver = (function() {
       var Klass = function() { },
 
       FieldEventObserver = function FieldEventObserver(element, callback) {
@@ -79,7 +77,7 @@
       return FieldEventObserver;
     })();
 
-    Field.EventObserver.plugin.getValue = function getValue() {
+    HTMLInputElement.EventObserver.plugin.getValue = function getValue() {
       var element, member, value, i = -1;
       if (this.group.length == 1) {
         return this.element.getValue();
@@ -96,7 +94,7 @@
       }
     };
 
-    Form.EventObserver = (function() {
+    HTMLFormElement.EventObserver = (function() {
       var Klass = function() { },
 
       FormEventObserver = function FormEventObserver(element, callback) {
@@ -108,10 +106,10 @@
       return FormEventObserver;
     })();
 
-    Form.EventObserver.plugin.getValue = function getValue() {
+    HTMLFormElement.EventObserver.plugin.getValue = function getValue() {
       return this.element.serialize();
     };
 
     // prevent JScript bug with named function expressions
     var getValue = null;
-  })(fuse.dom.FormElement, fuse.dom.InputElement);
+  })();

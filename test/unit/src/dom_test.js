@@ -60,22 +60,22 @@ new Test.Unit.Runner({
   },
 
   'testElementExtend': function() {
-    fuse.dom.Element.extend({ 'cheeseCake': function() { return 'Cheese cake' } });
+    fuse.dom.HTMLElement.extend({ 'cheeseCake': function() { return 'Cheese cake' } });
     this.assertRespondsTo('cheeseCake', fuse('<div>'));
 
-    fuse.dom.Element.extendByTag('DIV', { 'toOutput': fuse.dom.Element.plugin.inspect });
+    fuse.dom.HTMLElement.extendByTag('DIV', { 'toOutput': fuse.dom.HTMLElement.plugin.inspect });
     this.assertEqual('<div id="testdiv">', $('testdiv').toOutput(),
       'Should extend element with a `toOutput` method.');
 
     // remove toString addition
-    delete fuse.dom.DivElement.plugin.toOutput;
+    delete fuse.dom.HTMLDivElement.plugin.toOutput;
   },
 
   'testFuseGet': function() {
     var element = $('element_extend_test');
     this.assertRespondsTo('show', element);
 
-    var XHTML_TAGS = $w(
+    var HTML_TAGS = $w(
       'a abbr acronym address applet area '+
       'b bdo big blockquote br button caption '+
       'cite code col colgroup dd del dfn div dl dt '+
@@ -85,7 +85,7 @@ new Test.Unit.Runner({
       'script select small span strong style sub sup '+
       'table tbody td textarea tfoot th thead tr tt ul var');
 
-    XHTML_TAGS.each(function(tag) {
+    HTML_TAGS.each(function(tag) {
       var element = document.createElement(tag),
        nodeName = element.nodeName.toUpperCase();
 
@@ -105,7 +105,7 @@ new Test.Unit.Runner({
     }, this);
 
     // don't extend XML documents
-    var xmlDoc = (new DOMParser()).parseFromString('<note><to>Sam</to></note>', 'text/xml');
+    var xmlDoc = (new DOMParser).parseFromString('<note><to>Sam</to></note>', 'text/xml');
     this.assertUndefined(fuse(xmlDoc.firstChild).hide);
   },
 
@@ -117,11 +117,11 @@ new Test.Unit.Runner({
   },
 
   'testFuseGetAfterAddMethods': function() {
-    var span = fuse.dom.Element('span');
-    fuse.dom.Element.extend({ 'testMethod': fuse.Function.IDENTITY });
+    var span = fuse.dom.HTMLElement('span');
+    fuse.dom.HTMLElement.extend({ 'testMethod': fuse.Function.IDENTITY });
 
     this.assertRespondsTo('testMethod', fuse(span));
-    delete fuse.dom.Element.plugin.testMethod;
+    delete fuse.dom.HTMLElement.plugin.testMethod;
   },
 
   'testDollarFunction': function() {
@@ -1783,21 +1783,15 @@ new Test.Unit.Runner({
       while (testTags()) { };
     }
 
-    /* window.ElementOld = function(tagName, attributes) {
-      if (fuse.env.agent.IE && attributes && attributes.name) {
-        tagName = '<' + tagName + ' name="' + attributes.name + '">';
-        delete attributes.name;
-      }
-      return $(document.createElement(tagName)).setAttribute(attributes || {});
-    };
-
+    /*
     this.benchmark(function(){
       XHTML_TAGS.each(function(tagName) { new Element(tagName) });
     }, 5);
 
     this.benchmark(function(){
       XHTML_TAGS.each(function(tagName) { new ElementOld(tagName) });
-    }, 5); */
+    }, 5);
+    */
 
     this.assert(fuse('<h1>'));
     this.assertRespondsTo('update', fuse('<div>'));
@@ -1831,7 +1825,7 @@ new Test.Unit.Runner({
     input = $('write_attribute_input');
 
     $w('button input').each(function(tagName) {
-      var button = fuse.dom.Element(tagName, { 'attrs': { 'type': 'reset'} });
+      var button = fuse.dom.HTMLElement(tagName, { 'attrs': { 'type': 'reset'} });
       form.appendChild(button);
       input.setValue('something');
 
@@ -1843,6 +1837,26 @@ new Test.Unit.Runner({
       }
       button.remove();
     }, this);
+  },
+
+  'testElementDestroy': function(){
+    var element = $('destroy_me'), id = element.getFuseId();
+    element.destroy();
+
+    this.assertNull(element.raw,
+      'Destroyed element should not exist.');
+
+    this.assertUndefined(fuse.dom.data[id],
+      'Destroyed element should not have data.');
+  },
+
+  'testElementPurge': function(){
+    var element = $('purge_me'), id = element.getFuseId();
+    element.observe('click', fuse.Function.NOOP);
+    element.purge();
+
+    this.assertUndefined(fuse.dom.data[id],
+      'Destroyed element should not have data.');
   },
 
   'testElementGetHeight': function() {
@@ -2174,7 +2188,7 @@ new Test.Unit.Runner({
   },
 
   'testCustomElementMethods': function() {
-    var Element = fuse.dom.Element,
+    var Element = fuse.dom.HTMLElement,
      elem = $('navigation_test_f');
 
     this.assertRespondsTo('hashBrowns', elem);
@@ -2185,16 +2199,16 @@ new Test.Unit.Runner({
   },
 
   'testSpecificCustomElementMethods': function() {
-    var Element = fuse.dom.Element,
+    var Element = fuse.dom.HTMLElement,
      elem = $('navigation_test_f');
 
-    this.assert(fuse.dom.LiElement);
+    this.assert(fuse.dom.HTMLLiElement);
     this.assertRespondsTo('pancakes', elem);
     this.assertEqual('pancakes', elem.pancakes());
 
     var elem2 = $('test-visible');
 
-    this.assert(fuse.dom.DivElement);
+    this.assert(fuse.dom.HTMLDivElement);
     this.assertUndefined(elem2.pancakes);
     this.assertRespondsTo('waffles', elem2);
     this.assertEqual('waffles', elem2.waffles());

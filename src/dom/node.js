@@ -13,7 +13,7 @@
       }
       if (node.nodeType != TEXT_NODE) {
         // return cached if available
-        if (isCached !== false) {
+        if (isCached == null || isCached) {
           data = domData[Node.getFuseId(node)];
           if (data.decorator) {
             return data.decorator;
@@ -22,7 +22,7 @@
         // pass to element decorator
         switch (node.nodeType) {
           case ELEMENT_NODE:  return fromElement(node, isCached);
-          case DOCUMENT_NODE: return Document(node, isCached);
+          case DOCUMENT_NODE: return HTMLDocument(node, isCached);
         }
       }
 

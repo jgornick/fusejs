@@ -1,46 +1,15 @@
-  /*--------------------------------- FIELD ----------------------------------*/
+  /*------------------------------ FORM: FIELD -------------------------------*/
 
-  (function(dom) {
-    // create form control classes
-    (function() {
-      var tagName, i = -1,
-       tagNames = ['button', 'input', 'option', 'select', 'textarea'];
-      while (tagName = tagNames[++i]) {
-        Element.extendByTag(tagName);
-      }
-    })();
+  (function() {
+    var buttonPlugin = CONTROL_PLUGINS.BUTTON,
 
-    var dom        = fuse.dom,
+    inputPlugin = CONTROL_PLUGINS.INPUT,
 
-    buttonPlugin   = dom.ButtonElement.plugin,
+    optionPlugin = CONTROL_PLUGINS.OPTION,
 
-    inputPlugin    = dom.InputElement.plugin,
+    selectPlugin = CONTROL_PLUGINS.SELECT,
 
-    optionPlugin   = dom.OptionElement.plugin,
-
-    selectPlugin   = dom.SelectElement.plugin,
-
-    textAreaPlugin = dom.TextAreaElement.plugin,
-
-    CHECKED_INPUT_TYPES = {
-      'checkbox': 1,
-      'radio':    1
-    },
-
-    INPUT_BUTTONS = {
-      'button': 1,
-      'image':  1,
-      'reset':  1,
-      'submit': 1
-    },
-
-    PLUGINS = {
-      'BUTTON':   buttonPlugin,
-      'INPUT':    inputPlugin,
-      'OPTION':   optionPlugin,
-      'SELECT':   selectPlugin,
-      'TEXTAREA': textAreaPlugin
-    },
+    textAreaPlugin = CONTROL_PLUGINS.TEXTAREA,
 
     getOptionValue = function getValue() {
       return fuse.String((this.raw || this)[optionPlugin.hasAttribute.call(this, 'value')
@@ -61,8 +30,8 @@
       return this;
     };
 
-    textAreaPlugin.activate =
-    inputPlugin.activate = function activate() {
+    inputPlugin.activate =
+    textAreaPlugin.activate = function activate() {
       var element = this.raw || this;
       try { element.focus(); } catch(e) { }
       if (element.select && !INPUT_BUTTONS[element.type]) {
@@ -73,7 +42,7 @@
 
     selectPlugin.clear =
     textAreaPlugin.clear = function clear() {
-      return PLUGINS[getNodeName(this.raw || this)].setValue.call(this, null);
+      return CONTROL_PLUGINS[getNodeName(this.raw || this)].setValue.call(this, null);
     };
 
     inputPlugin.clear = function clear() {
@@ -81,50 +50,50 @@
       if (CHECKED_INPUT_TYPES[type]) {
         element.checked = false;
       } else if (!INPUT_BUTTONS[type]) {
-        PLUGINS[getNodeName(element)].setValue.call(this, null);
+        CONTROL_PLUGINS[getNodeName(element)].setValue.call(this, null);
       }
       return this;
     };
 
-    buttonPlugin.disable   =
-    selectPlugin.disable   =
-    textAreaPlugin.disable =
-    inputPlugin.disable = function disable() {
+    buttonPlugin.disable =
+    inputPlugin.disable =
+    selectPlugin.disable =
+    textAreaPlugin.disable = function disable() {
       (this.raw || this).disabled = true;
       return this;
     };
 
-    buttonPlugin.enable   =
-    selectPlugin.enable   =
-    textAreaPlugin.enable =
-    inputPlugin.enable = function enable() {
+    buttonPlugin.enable =
+    inputPlugin.enable =
+    selectPlugin.enable =
+    textAreaPlugin.enable = function enable() {
       (this.raw || this).disabled = false;
       return this;
     };
 
-    buttonPlugin.focus   =
-    selectPlugin.focus   =
-    textAreaPlugin.focus =
-    inputPlugin.focus = function focus() {
+    buttonPlugin.focus =
+    inputPlugin.focus =
+    selectPlugin.focus =
+    textAreaPlugin.focus = function focus() {
       // avoid IE errors when element or ancestors are not rendered
       try { (this.raw || this).focus(); } catch(e) { }
       return this;
     };
 
-    textAreaPlugin.present =
-    inputPlugin.present = function present() {
+    inputPlugin.present =
+    textAreaPlugin.present = function present() {
       return !!(this.raw || this).value;
     };
 
-    buttonPlugin.serialize   =
-    textAreaPlugin.serialize =
-    inputPlugin.serialize = function serialize() {
+    buttonPlugin.serialize =
+    inputPlugin.serialize =
+    textAreaPlugin.serialize = function serialize() {
       var pair, name, nodeName, element = this.raw || this;
       if (element.disabled || !(name = element.name)) {
         return fuse.String('');
       }
       pair = { };
-      pair[name] = PLUGINS[getNodeName(element)].getValue.call(this);
+      pair[name] = CONTROL_PLUGINS[getNodeName(element)].getValue.call(this);
       return fuse.Object.toQueryString(pair);
     };
 
@@ -143,8 +112,8 @@
       return fuse.Object.toQueryString(pair);
     };
 
-    textAreaPlugin.select =
-    inputPlugin.select = function select() {
+    inputPlugin.select =
+    textAreaPlugin.select = function select() {
       (this.raw || this).select();
       return this;
     };
@@ -152,7 +121,7 @@
 
     /* define getValue/setValue for each field class */
 
-    buttonPlugin.getValue   =
+    buttonPlugin.getValue =
     textAreaPlugin.getValue = function getValue() {
       return fuse.String((this.raw || this).value || '');
     };
@@ -163,10 +132,10 @@
       return fuse.String(element.value || fallback);
     };
 
-    buttonPlugin.setValue   =
-    textAreaPlugin.setValue =
-    optionPlugin.setValue   =
-    inputPlugin.setValue = function setValue(value) {
+    buttonPlugin.setValue =
+    inputPlugin.setValue =
+    optionPlugin.setValue =
+    textAreaPlugin.setValue = function setValue(value) {
       (this.raw || this).value = value || '';
       return this;
     };

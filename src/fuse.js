@@ -14,8 +14,12 @@
 (function(window) {
 
   // private vars
-  var DATA_ID_PROP, PARENT_NODE, Document, Element, Node, NodeList, Window,
-   domData, eachKey, envAddTest, envTest, fromElement, getDocument, getFuseId,
+  var CHECKED_INPUT_TYPES, CONTROL_PLUGINS, DATA_ID_PROP, EVENT_TYPE_ALIAS,
+   INPUT_BUTTONS, PARENT_NODE, PARENT_WINDOW, Node, NodeList, Element,
+   HTMLDocument, HTMLElement, HTMLButtonElement, HTMLFormElement,
+   HTMLInputElement, HTMLOptionElement, HTMLSelectElement, HTMLTextAreaElement,
+   Window, destroyElement, domData, eachKey, emptyElement, envAddTest, envTest,
+   extendByTag, fromElement, getDocument, getFragmentFromHTML, getFuseId,
    getNodeName, getScriptText, getWindow, getOrCreateTagClass, hasKey, isArray,
    isElement, isHash, isNumber, isPrimitive, isRegExp, isString, returnOffset,
    runScriptText, setScriptText, undef,
@@ -28,11 +32,33 @@
 
   TEXT_NODE = 3,
 
+  ARRAY_CLASS    = '[object Array]',
+
+  BOOLEAN_CLASS  = '[object Boolean]',
+
+  DATE_CLASS     = '[object Date]',
+
+  FUNCTION_CLASS = '[object Function]',
+
+  NUMBER_CLASS   = '[object Number]',
+
+  OBJECT_CLASS   = '[object Object]',
+
+  REGEXP_CLASS   = '[object RegExp]',
+
+  STRING_CLASS   = '[object String]',
+
+  CLASS = '[[Class]]',
+
+  PROTO = '__proto__',
+
   IDENTITY = function IDENTITY(x) { return x; },
 
   NOOP = function NOOP() { },
 
   NON_HOST_TYPES = { 'boolean': 1, 'number': 1, 'string': 1, 'undefined': 1 },
+
+  ORIGIN = '__origin__',
 
   slice = [].slice,
 
@@ -44,18 +70,46 @@
 
   addNodeListMethod = NOOP,
 
-  addArrayMethods = (function() {
-    var result = function(List) {
-      var callbacks = addArrayMethods.callbacks, i = -1;
-      while (callbacks[++i]) callbacks[i](List);
-    };
-    result.callbacks = [];
-    return result;
-  })(),
-
   capitalize = function(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
   },
+
+  cloneMethod = (function() {
+    function cloneMethod(method, origin) {
+      var result, source = String(method);
+      if (!cloneMethod.reName) {
+        // init props on method to avoid problems when cloning itself
+        cloneMethod.reName = /^[\s\(]*function([^(]*)\(/;
+        cloneMethod.varOrigin = String(function() { return ORIGIN })
+          .match(/return\s+([^}\s]*)/)[1];
+      }
+      result = Function(
+        'var ' + cloneMethod.varOrigin + '="' +
+        ORIGIN + '";' + source + '; return ' +
+        source.match(cloneMethod.reName)[1])();
+
+      origin && method[ORIGIN] && (result[ORIGIN] = origin);
+      return result;
+    }
+
+    try {
+      if (String(cloneMethod(cloneMethod)(cloneMethod)).indexOf('cloneMethod') < 0) {
+        throw 1;
+      }
+      return cloneMethod;
+    }
+    catch (e) {
+      return function(method, origin) {
+        return function() {
+          var result, backup = method[ORIGIN];
+          backup && (method[ORIGIN] = origin);
+          result = method.apply(this, arguments);
+          backup && (method[ORIGIN] = backup);
+          return result;
+        };
+      }
+    }
+  })(),
 
   concatList = function(list, otherList) {
     var pad = list.length, length = otherList.length;
@@ -68,7 +122,7 @@
   },
 
   debug = (function() {
-    var script, doc = window.document, i = -1,
+    var match, script, doc = window.document, i = -1,
      reSrcDebug = /(?:^|&)(debug)(?:=(.*?))?(?:&|$)/,
      reFilename = /(^|\/)fuse\b.*?\.js\?/,
      scripts = doc && doc.getElementsByTagName('script') || [],
@@ -76,7 +130,7 @@
 
     if (!(match = query.match(/(?:\?|&)(fusejs_debug)(?:=(.*?))?(?:&|$)/))) {
       while (script = scripts[++i]) {
-        if (reFilename.test(script.src) && 
+        if (reFilename.test(script.src) &&
             (match = (script.src.split('?')[1] || '').match(reSrcDebug))) {
           break;
         }
@@ -93,7 +147,7 @@
   })(),
 
   isFunction = function isFunction(value) {
-    return toString.call(value) == '[object Function]';
+    return toString.call(value) == FUNCTION_CLASS;
   },
 
   // Host objects can return type values that are different from their actual
@@ -127,19 +181,13 @@
     'call': (function() {
       var __toString = {}.toString;
       return function(object) {
-        return object != null && object['[[Class]]'] || __toString.call(object);
+        return object != null && object[CLASS] || __toString.call(object);
       };
     })()
   };
 
-  /**
-  * ## fuse.version
-  *
-  * The version of [FuseJS](http://fusejs.com) that you're using (e.g., <%= Version %>).
-  */
   window.fuse = (function() {
-    var fuse = function fuse() { };
-    fuse.version = '<%= Version %>';
+    function fuse() { };
     return fuse;
   })();
 
@@ -200,9 +248,12 @@
     fuse.addNS =
     fuse.prototype.addNS = addNS;
 
+    // deleted later
     fuse.uid = uid;
+
     fuse.debug = debug;
-    fuse.updateGenerics  = updateGenerics;
+    fuse.version = '<%= Version %>';
+    fuse.updateGenerics = updateGenerics;
   })();
 
   //= require "env"
@@ -269,22 +320,30 @@
   //= require "ajax/timed-updater"
   /*--------------------------------------------------------------------------*/
 
-  addArrayMethods(fuse.Array);
+  if (fuse.dom && NodeList) {
+    HTMLFormElement && eachKey(HTMLFormElement.plugin, addNodeListMethod);
+    HTMLInputElement && eachKey(HTMLInputElement.plugin, addNodeListMethod);
 
-  (function(dom) {
-    var Field, Form, NodeList;
-    if (dom && (NodeList = dom.NodeList)) {
-      if (Form = dom.FormElement) eachKey(Form.plugin, addNodeListMethod);
-      if (Field = dom.InputElement) eachKey(Field.plugin, addNodeListMethod);
-      eachKey(dom.Element.plugin, addNodeListMethod);
+    eachKey(HTMLElement.plugin, addNodeListMethod);
+    eachKey(Element.plugin, addNodeListMethod);
 
+    (function(nlPlugin, origin) {
       // Pave any NodeList methods that fuse.Array shares.
       // Element first(), last(), and contains() may be called by using invoke()
       // Ex: elements.invoke('first');
-      addArrayMethods(NodeList);
-    }
-  })(fuse.dom);
+      eachKey(fuse.Array.plugin, function(value, key) {
+        if (value[ORIGIN]) {
+          nlPlugin[key] = cloneMethod(value, origin);
+        }
+        else if (!nlPlugin[key]) {
+          nlPlugin[key] = value;
+        }
+      });
 
+      NodeList.from = cloneMethod(fuse.Array.from, origin);
+      NodeList.fromNodeList = cloneMethod(fuse.Array.fromNodeList, origin);
+    })(NodeList.plugin, { 'Number': fuse.Number, 'Array': NodeList });
+  }
 })(this);
 
 (function(window) {
