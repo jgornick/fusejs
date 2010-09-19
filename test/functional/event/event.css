@@ -65,3 +65,19 @@ fieldset {
   width:400px;
   font-size:13px !important;
 }
+
+form {
+  margin-bottom: 20px;
+}
+
+label, input, select, textarea {
+  display: block;
+}
+
+.focusable-delegation-container label {
+  color: #008000;
+}
+
+.focusable-delegation-container.stopped label {
+  color: #F00;
+}

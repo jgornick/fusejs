@@ -368,23 +368,84 @@
         </select>
         <span>(change)</span>
       </li>
-      <li>
-         <span>Child 5</span>
-        <input type="radio" name="delegation-child-5" value="1">
-        <input type="radio" name="delegation-child-5" value="2">
-        <span>(focus)</span>
-      </li>
     </ul>
 
-    Results: 
+    Results:
 
     <ul id="delegation_results">
       <li id="delegation_result_1">Test 1</li>
       <li id="delegation_result_2">Test 2</li>
       <li id="delegation_result_3">Test 3</li>
       <li id="delegation_result_4">Test 4</li>
-      <li id="delegation_result_5">Test 5</li>
     </ul>
+
+    <h2>Form Delegation (Submit & Reset)</h2>
+    <form id="delegation_form" action="#" method="get">
+      <input type="text" name="input1" value="I am value" />
+      <input type="submit" value="Submit Me!" />
+      <input type="reset" value="Reset Me!" />
+    </form>
+
+    <div class="focusable-delegation-container">
+      <h2>Focusable Elements Delegation (Focus & Blur)</h2>
+      <button id="stop_focusable_delegation">Stop Focusable Delegation (Red Labels)</button>
+
+      <label for="fd_text">Input Text:</label>
+      <input id="fd_text" type="text" name="input1" class="focusable-delegation" />
+      <label for="fd_search">Input Search:</label>
+      <input id="fd_search" type="search" name="input2" class="focusable-delegation" />
+      <label for="fd_url">Input URL:</label>
+      <input id="fd_url" type="url" name="input3" class="focusable-delegation" />
+      <label for="fd_tel">Input Tel:</label>
+      <input id="fd_tel" type="tel" name="input4" class="focusable-delegation" />
+      <label for="fd_email">Input Email:</label>
+      <input id="fd_email" type="email" name="input5" class="focusable-delegation" />
+      <label for="fd_password">Input Password:</label>
+      <input id="fd_password" type="password" name="input6" class="focusable-delegation" />
+      <label for="fd_datetime">Input DateTime:</label>
+      <input id="fd_datetime" type="datetime" name="input7" class="focusable-delegation" />
+      <label for="fd_date">Input Date:</label>
+      <input id="fd_date" type="date" name="input8" class="focusable-delegation" />
+      <label for="fd_month">Input Month:</label>
+      <input id="fd_month" type="month" name="input9" class="focusable-delegation" />
+      <label for="fd_week">Input Week:</label>
+      <input id="fd_week" type="week" name="input10" class="focusable-delegation" />
+      <label for="fd_time">Input Time:</label>
+      <input id="fd_time" type="time" name="input11" class="focusable-delegation" />
+      <label for="fd_datetime-local">Input DateTime-Local:</label>
+      <input id="fd_datetime-local" type="datetime-local" name="input12" class="focusable-delegation" />
+      <label for="fd_number">Input Number:</label>
+      <input id="fd_number" type="number" name="input13" class="focusable-delegation" />
+      <label for="fd_range">Input Range:</label>
+      <input id="fd_range" type="range" name="input14" class="focusable-delegation" />
+      <label for="fd_color">Input Color:</label>
+      <input id="fd_color" type="color" name="input15" class="focusable-delegation" />
+      <label for="fd_checkbox">Input Checkbox:</label>
+      <input id="fd_checkbox" type="checkbox" name="input16" class="focusable-delegation" />
+      <label for="fd_radio">Input Radio:</label>
+      <input id="fd_radio" type="radio" name="input17" class="focusable-delegation" />
+      <label for="fd_file">Input File:</label>
+      <input id="fd_file" type="file" name="input18" class="focusable-delegation" />
+
+      <label for="fd_select">Select:</label>
+      <select id="fd_select" class="focusable-delegation">
+        <option>Option 1</option>
+        <option>Option 2</option>
+        <option>Option 3</option>
+      </select>
+
+      <label for="fd_textarea">Input TextArea:</label>
+      <textarea id="fd_textarea" class="focusable-delegation"></textarea>
+
+      <label for="fd_button">Input Button:</label>
+      <button id="fd_button" class="focusable-delegation">Click me!</button>
+
+      <label for="fd_anchor">Input Anchor:</label>
+      <a href="#" id="fd_anchor" class="focusable-delegation">Click me!</a>
+
+      <label for="fd_anchor_2">Input Anchor 2 w/ tabindex of 0:</label>
+      <a href="#" id="fd_anchor_2" class="focusable-delegation" tabindex="0">Click me!</a>
+    </div>
   </div>
 
   <script type="text/javascript">
@@ -429,14 +490,56 @@
 
     var observer = function() {
       var result = $('delegation_results').down(5, 'li')[4];
-      result.passed(msg + " (" + (+new Date) + ")");
+       result.passed(msg + " (" + (+new Date) + ")");
       result.observe('click', function() {
         this.update(clickMsg);
         $('delegation_container').stopDelegating('focus', '[type=radio]', observer);
       });
     };
 
-    $('delegation_container').delegate('focus', '[type=radio]', observer);
+    $('delegation_container').delegate('submit', '#delegation_form', function(e) {
+      var target = $(e.getCurrentTarget()), delegator = $(e.getDelegator());
+      target.getChildren('[type=submit]').setValue(msg).observe('click', function(e) {
+        e.stop();
+        this.setValue(clickMsg);
+        delegator.stopDelegating('submit', '#delegation_form');
+        this.stopObserving('click');
+      });
+      e.stop();
+    });
+
+    $('delegation_container').delegate('reset', '#delegation_form', function(e) {
+      var target = $(e.getCurrentTarget()), delegator = $(e.getDelegator());
+      target.getChildren('[name=input1]').setValue('I will reset to "I am value".');
+      target.getChildren('[type=reset]').setValue(msg).observe('click', function(e) {
+        e.stop();
+        this.setValue(clickMsg);
+        delegator.stopDelegating('reset', '#delegation_form');
+        this.stopObserving('click');
+      });
+      e.stop();
+    });
+
+    $('delegation_container').delegate('focus', '.focusable-delegation', function(e) {
+      var target = $(e.getCurrentTarget()), delegator = $(e.getDelegator());
+      target.previous('label').update('Focus Fired - ' + +new Date);
+      target.appendSibling('<span>Now click me to cause a blur!</span>');
+    });
+
+    $('delegation_container').delegate('blur', '.focusable-delegation', function(e) {
+      var target = $(e.getCurrentTarget()), delegator = $(e.getDelegator());
+      target.next('span').remove();
+      target.previous('label').update('Blur Fired - ' + +new Date);
+    });
+
+    $('stop_focusable_delegation').observe('click', function(e) {
+      $('delegation_container').stopDelegating('focus', '.focusable-delegation');
+      $('delegation_container').stopDelegating('blur', '.focusable-delegation');
+      fuse(e.getCurrentTarget())
+        .update('Focusable Delegation Stopped!')
+        .up('.focusable-delegation-container')
+          .addClassName('stopped');
+    });
   </script>
 
   <iframe id="iframe" src="iframe.html" height="200" width="500"></iframe>

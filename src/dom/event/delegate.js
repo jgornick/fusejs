@@ -10,10 +10,17 @@
 
     NON_BUBBLING_EVENTS = { 'delegate:blur': 1, 'delegate:focus': 1 },
 
+    // Focusable Elements
+    // HTML5: http://www.whatwg.org/specs/web-apps/current-work/multipage/editing.html#focus
+    // HTML 4.01: http://www.w3.org/TR/html401/interact/forms.html#h-17.11
     PROBLEM_ELEMENTS = {
-      'LABEL':    1,
+      'A':        1,
+      'AREA':     1,
       'BUTTON':   1,
+      'COMMAND':  1,
       'INPUT':    1,
+      'LABEL':    1,
+      'LINK':     1,
       'SELECT':   1,
       'TEXTAREA': 1
     },
