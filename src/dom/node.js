@@ -94,7 +94,7 @@
           skipDataInit || (skipDataInit = domData[id]);
           if (!skipDataInit) {
             skipDataInit =
-            domData[id] = { 'nodes': { } };
+            domData[id] = { 'nodes': { }, 'user': { } };
           }
         }
         else {
@@ -103,7 +103,7 @@
       }
       skipDataInit || (skipDataInit = domData[id]);
       if (!skipDataInit) {
-        domData[id] = { };
+        domData[id] = { 'user': { } };
       }
       return id;
     };

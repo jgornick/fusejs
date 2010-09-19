@@ -1,18 +1,18 @@
   /*---------------------------------- DOM -----------------------------------*/
 
-  NodeList = fuse.Array;
+  // Add fuse.dom and fuse.dom.data namespace
+  domData = fuse.addNS('dom.data');
 
-  domData =
-  fuse.addNS('dom.data');
+  domData[0] = { 'user': { } }; // window
+  domData[1] = { 'nodes': { }, 'user': { } }; // document
+
+  NodeList = fuse.Array;
 
   fuse._doc    = window.document;
   fuse._div    = fuse._doc.createElement('DiV');
   fuse._docEl  = fuse._doc.documentElement;
   fuse._headEl = fuse._doc.getElementsByTagName('head')[0] || fuse._docEl;
   fuse._info   = { };
-
-  domData[0] = { };
-  domData[1] = { 'nodes': { } };
 
   fuse._info.docEl =
   fuse._info.root  =
