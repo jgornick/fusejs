@@ -325,7 +325,7 @@
             (type == null ? '' : ' type="' + type + '"') + '>';
 
           delete attrs.name; delete attrs.type;
-          return plugin.setAttribute.call(fromHTML(tagName, context), attrs);
+          return fuse.dom.Element.plugin.setAttribute.call(fromHTML(tagName, context), attrs);
         }
         return __HTMLElement(tagName, context);
       };
