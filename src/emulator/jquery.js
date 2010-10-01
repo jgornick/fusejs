@@ -10,7 +10,7 @@
   jQuery.fn.attr = function(name, value) {
     var result, i = -1, item;
 
-    if (typeof value === undefined) {
+    if (typeof value == 'undefined') {
       // Getter
       result = nlp.getAttribute.apply(this, arguments);
 
@@ -19,14 +19,14 @@
         : result;
     } else {
       // Setter
-      if (typeof name === 'object') {
+      if (typeof name == 'object') {
         for (item in name) {
-          this.attr(item, name[item]);
+          nlp.setAttribute.call(this, item, name[item]);
         }
         return this;
       } else if (fuse.Object.isFunction(value)) {
         while (item = this[++i]) {
-          this.attr(name, value.call(item, i, jQuery(item).attr(name)));
+          nlp.setAttribute.call(this, name, value.call(item, i, jQuery(item).attr(name)));
         }
         return this;
       } else {
@@ -39,7 +39,7 @@
     var i = -1, item;
     if (fuse.Object.isFunction(value)) {
       while (item = this[++i]) {
-        this.addClass(value.call(item, i, jQuery(item).attr('class')));
+        nlp.addClassName.call(this, value.call(item, i, jQuery(item).attr('class')));
       }
       return this;
     } else {
@@ -49,19 +49,19 @@
 
   jQuery.fn.css = function(name, value) {
     var i = -1, item;
-    if (typeof value === 'undefined') {
+    if (typeof value == 'undefined') {
       // Getter
       return String(nlp.getStyle.apply(this, arguments));
     } else {
       // Setter
-      if (typeof name === 'object') {
+      if (typeof name == 'object') {
         for (item in name) {
-          this.css(item, name[item]);
+          nlp.setStyle.call(this, item, name[item]);
         }
         return this;
       } else if (fuse.Object.isFunction(value)) {
         while (item = this[++i]) {
-          this.css(name, value.call(item, i, jQuery(item).css(name)));
+          nlp.setStyle.call(this, name, value.call(item, i, jQuery(item).css(name)));
         }
         return this;
       } else {
@@ -75,7 +75,7 @@
   jQuery.fn.height = function(value) {
     var i = -1, item;
 
-    if (typeof value === 'undefined') {
+    if (typeof value == 'undefined') {
       // Getter
       return Number(nlp.getHeight.call(this, 'content'));
     } else {
@@ -113,8 +113,8 @@
       return jQuery._NodeList();
     }
 
-    if (typeof selector === 'string') {
-      if (selector.charAt(0) === '<') {
+    if (typeof selector == 'string') {
+      if (selector.charAt(0) == '<') {
         result = fuse.dom.Element(selector, { decorate: false });
       } else {
         // exit early
