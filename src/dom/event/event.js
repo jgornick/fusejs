@@ -34,20 +34,20 @@
     Decorator.prototype = Event.plugin;
 
     Event.addStatics({
-      'KEY_BACKSPACE': 8,
-      'KEY_DELETE':    46,
-      'KEY_DOWN':      40,
-      'KEY_END':       35,
-      'KEY_ESC':       27,
-      'KEY_HOME':      36,
-      'KEY_INSERT':    45,
-      'KEY_LEFT':      37,
-      'KEY_PAGEDOWN':  34,
-      'KEY_PAGEUP':    33,
-      'KEY_RETURN':    13,
-      'KEY_RIGHT':     39,
-      'KEY_TAB':       9,
-      'KEY_UP':        38,
+      'KEY_BACKSPACE':  8,
+      'KEY_DELETE':     46,
+      'KEY_DOWN':       40,
+      'KEY_END':        35,
+      'KEY_ESC':        27,
+      'KEY_HOME':       36,
+      'KEY_INSERT':     45,
+      'KEY_LEFT':       37,
+      'KEY_PAGEDOWN':   34,
+      'KEY_PAGEUP':     33,
+      'KEY_RETURN':     13,
+      'KEY_RIGHT':      39,
+      'KEY_TAB':        9,
+      'KEY_UP':         38,
       'updateGenerics': Node.updateGenerics
     });
 
@@ -67,6 +67,8 @@
     CLICK_PROP = 'which',
 
     plugin = Event.plugin,
+
+    custom = Event.custom = {},
 
     arrIndexOf = (function(fn) {
       return fn && fn.raw || function(value) {
@@ -562,11 +564,36 @@
     Window.plugin.observe =
     HTMLDocument.plugin.observe =
     HTMLElement.plugin.observe  = function observe(type, handler) {
-      var element = this.raw || this,
-       dispatcher = addCache(element, type, handler);
+      var data, customEvent = custom[type] || {}, decorator = this,
+        element = decorator.raw || decorator,
+        dispatcher = addCache(element, type, handler);
 
-      if (!dispatcher) return this;
-      addObserver(element, type, dispatcher);
+      if (!decorator.raw) {
+        data = domData[getFuseId(element)] || {};
+        decorator = data.decorator || fuse(element);
+      }
+
+      // has the dispatcher already been created
+      if (!dispatcher) {
+        // always try to run custom event add method
+        if (customEvent.add) {
+          customEvent.add.call(decorator, type, handler);
+        }
+
+        return this;
+      }
+
+      // first time observing the event, check custom events
+      if (!customEvent.setup || customEvent.setup.call(decorator, type, handler) === false) {
+        // since the setup method isn't set or returned false, this means we need to still attach
+        // an event to the element since it wasn't handled in the setup
+        addObserver(element, type, dispatcher);
+      }
+
+      if (customEvent.add) {
+        customEvent.add.call(decorator, type, handler);
+      }
+
       return this;
     };
 
@@ -574,12 +601,21 @@
     Window.plugin.stopObserving =
     HTMLDocument.plugin.stopObserving =
     HTMLElement.plugin.stopObserving  = function stopObserving(type, handler) {
-      var ec, foundAt, length,
-       element = this.raw || this,
-       id      = getFuseId(this),
+      var data, ec, foundAt, length,
+       customEvent = custom[type] || {},
+       decorator = this,
+       element = decorator.raw || decorator,
+       id      = getFuseId(element),
        events  = domData[id].events;
 
+
       if (!events) return this;
+
+      if (!decorator.raw) {
+        data = domData[id] || {};
+        decorator = data.decorator || fuse(element);
+      }
+
       type = isString(type) ? type && String(type) : null;
 
       // if the event type is omitted we stop
@@ -590,12 +626,13 @@
         });
         return this;
       }
+
       if (ec = events[type]) {
         // if the handler is omitted we stop
         // observing all handlers of that type
         if (handler == null) {
           length = ec.handlers.length || 1;
-          while (length--) stopObserving.call(element, type, length);
+          while (--length) stopObserving.call(element, type, ec.handlers[length]);
           return this;
         }
       } else {
@@ -619,10 +656,16 @@
       // remove handler
       ec.handlers.splice(foundAt, 1);
 
+      if (customEvent.remove) {
+        customEvent.remove.call(decorator, type);
+      }
+
       // if no more handlers and not bubbling for
       // delegation then remove the event type data and dispatcher
       if (!ec.handlers.length && !ec._isBubblingForDelegation) {
-        removeObserver(element, type, ec.dispatcher);
+        if (!customEvent.teardown || customEvent.teardown.call(decorator) === false) {
+          removeObserver(element, type, ec.dispatcher);
+        }
         delete events[type];
       }
       return this;

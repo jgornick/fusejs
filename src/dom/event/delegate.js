@@ -157,7 +157,7 @@
 
     plugin.delegate =
     HTMLDocument.plugin.delegate = function delegate(type, selector, delegatee) {
-      var handler,element = this.raw || this,
+      var handler, element = this.raw || this,
        id = getFuseId(this), data = domData[id];
 
       // juggle arguments
