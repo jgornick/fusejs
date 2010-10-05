@@ -12,7 +12,7 @@
       ? { 'float': 'styleFloat', 'cssFloat': 'styleFloat' }
       : { 'float': 'cssFloat' },
 
-    NON_PX_NAMES = { 'fontWeight': 1, 'opacity': 1, 'zIndex': 1, 'zoom': 1 },
+    NON_UNIT_NAMES = { 'fontWeight': 1, 'opacity': 1, 'zIndex': 1, 'zoom': 1 },
 
     POSITION_NAMES = { 'bottom': 1, 'left': 1, 'right': 1, 'top': 1 },
 
@@ -67,21 +67,27 @@
       return result;
     };
 
-    plugin.setStyle = function setStyle(styles) {
-      var hasOpacity, key, value, opacity, elemStyle = this.style;
+    plugin.setStyle = function setStyle(styles, value) {
+      var hasOpacity, key, opacity, style, elemStyle = this.style;
 
       if (isString(styles)) {
-        if (reOpacity.test(styles)) {
-          plugin.setOpacity.call(this, styles.match(reOpacity)[1]);
-          styles = styles.replace(reOpacity, '');
+        if (typeof value != 'undefined') {
+          style = styles; styles = {};
+          styles[style] = value;
+        } else {
+          // handle a css formatted string
+          if (reOpacity.test(styles)) {
+            plugin.setOpacity.call(this, styles.match(reOpacity)[1]);
+            styles = styles.replace(reOpacity, '');
+          }
+          // IE and Konqueror bug-out when setting overflow via cssText
+          if (reOverflow.test(styles)) {
+            elemStyle.overflow = styles.match(reOverflow)[1];
+            styles = styles.replace(reOverflow, '');
+          }
+          elemStyle.cssText += ';' + styles;
+          return this;
         }
-        // IE and Konqueror bug-out when setting overflow via cssText
-        if (reOverflow.test(styles)) {
-          elemStyle.overflow = styles.match(reOverflow)[1];
-          styles = styles.replace(reOverflow, '');
-        }
-        elemStyle.cssText += ';' + styles;
-        return this;
       }
 
       if (isHash(styles)) {
@@ -96,6 +102,12 @@
 
       for (key in styles) {
         value = String(styles[key] || ''); key = camelize(key);
+
+        // do we need to append a unit to the value
+        if (!NON_UNIT_NAMES[key] && !isNaN(+value)) {
+          value = value + (key === 'lineHeight' ? 'em' : 'px');
+        }
+
         elemStyle[FLOAT_TRANSLATIONS[key] || key] = value;
       }
 
@@ -189,7 +201,7 @@
         // set it on something we can grab a pixel value from.
         // Inspired by Dean Edwards' comment
         // http://erik.eae.net/archives/2007/07/27/18.54.15/#comment-102291
-        else if (!NON_PX_NAMES[name] && reNonPxUnit.test(result)) {
+        else if (!NON_UNIT_NAMES[name] && reNonPxUnit.test(result)) {
           if (name == 'fontSize') {
             unit = result.match(reUnit)[0];
             if (unit == '%') {
