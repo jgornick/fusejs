@@ -20,9 +20,9 @@
 
     RELATIVE_CSS_UNITS = { 'em': 1, 'ex': 1 },
 
-    reOpacity   = /opacity:\s*(\d?\.?\d*)/,
+    reOpacity   = /opacity\s*:\s*(\d*\.*\d+|inherit)/i,
 
-    reOverflow  = /overflow:\s*([^;]+)/,
+    reOverflow  = /overflow\s*:\s*([^;]+)/,
 
     reNonPxUnit = /^-?\d+(\.\d+)?(?!px)[%a-z]+$/i,
 
@@ -71,12 +71,12 @@
       var hasOpacity, key, value, opacity, elemStyle = this.style;
 
       if (isString(styles)) {
-        if (styles.indexOf('opacity:') > -1) {
+        if (reOpacity.test(styles)) {
           plugin.setOpacity.call(this, styles.match(reOpacity)[1]);
           styles = styles.replace(reOpacity, '');
         }
         // IE and Konqueror bug-out when setting overflow via cssText
-        if (styles.indexOf('overflow:') > -1) {
+        if (reOverflow.test(styles)) {
           elemStyle.overflow = styles.match(reOverflow)[1];
           styles = styles.replace(reOverflow, '');
         }
@@ -333,7 +333,7 @@
       if (display && display != 'none') {
         data.madeHidden = display;
       }
-      else if (data.hiddenByCss) { 
+      else if (data.hiddenByCss) {
         value = '';
       }
       delete data.hiddenByCss;
@@ -394,14 +394,14 @@
     plugin.setOpacity = (function() {
       var nearOne = 0.99999,
        nearZero   = 0.00001,
-       reAlpha    = /alpha\([^)]*\)/i;
+       reAlpha    = /alpha\([^)]*\)/i,
+       reSpaces   = /^\x20+$/;
 
       var setOpacity = function setOpacity(value) {
-        if (value > nearOne) {
-          value = 1;
-        } if (value < nearZero && !isString(value)) {
-          value = 0;
+        if (!isNaN(+value)) {
+          value = value > nearOne || reSpaces.test(value) ? 1 : value < nearZero ? 0 : +value;
         }
+
         this.style[OPACITY_PROP] = value;
         return this;
       };
@@ -415,13 +415,11 @@
            filter     = currStyle.filter.replace(reAlpha, ''),
            zoom       = currStyle.zoom;
 
-          if (value > nearOne || value == '' && isString(value)) {
-            value = 1;
-          } if (value < nearZero) {
-            value = 0;
+          if (!isNaN(+value)) {
+            value = value > nearOne || reSpaces.test(value) ? 1 : value < nearZero ? 0 : +value;
           }
 
-          if (value === 1) {
+          if (value === 1 || value === 'inherit') {
             if (filter) {
               elemStyle.filter = filter;
             } else {
