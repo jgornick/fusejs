@@ -39,11 +39,11 @@
     var i = -1, item;
     if (fuse.Object.isFunction(value)) {
       while (item = this[++i]) {
-        nlp.addClassName.call(this, value.call(item, i, jQuery(item).attr('class')));
+        nlp.addClass.call(this, value.call(item, i, jQuery(item).attr('class')));
       }
       return this;
     } else {
-      return nlp.addClassName.apply(this, arguments);
+      return nlp.addClass.apply(this, arguments);
     }
   };
 
@@ -70,7 +70,7 @@
     }
   };
 
-  jQuery.fn.hasClass = nlp.hasClassName;
+  jQuery.fn.hasClass = nlp.hasClass;
 
   jQuery.fn.height = function(value) {
     var i = -1, item;

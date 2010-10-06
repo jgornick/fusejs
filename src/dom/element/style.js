@@ -249,22 +249,15 @@
      reEdgeSpaces  = /[\t\n\r\f]/g,
      reExtraSpaces = /\x20{2,}/g;
 
-    plugin.addClassName = function addClassName(className) {
-      if (!plugin.hasClassName.call(this, className)) {
+    plugin.addClass = function addClass(className) {
+      if (!plugin.hasClass.call(this, className)) {
         var element = this.raw || this;
         element.className += (element.className ? ' ' : '') + className;
       }
       return this;
     };
 
-    plugin.getClassNames = function getClassNames() {
-      var element = this.raw || this, cn = element.className;
-      return cn.length
-        ? split.call(cn.replace(reEdgeSpaces, ' ').replace(reExtraSpaces, ' '), ' ')
-        : fuse.Array();
-    };
-
-    plugin.hasClassName = function hasClassName(className) {
+    plugin.hasClass = function hasClass(className) {
       var element = this.raw || this, cn = element.className;
       return !!cn.length &&
         (cn == className ||
@@ -272,7 +265,7 @@
         .indexOf(' ' + className + ' ') > -1);
     };
 
-    plugin.removeClassName = function removeClassName(className) {
+    plugin.removeClass = function removeClass(className) {
       var classNames, length, element = this.raw || this,
        cn = element.className, i = -1, j = i, result = [];
 
@@ -289,17 +282,24 @@
       return this;
     };
 
-    plugin.toggleClassName = function toggleClassName(className) {
-      return plugin[plugin.hasClassName.call(this, className) ?
-        'removeClassName' : 'addClassName'].call(this, className);
+    plugin.toggleClass = function toggleClass(className) {
+      return plugin[plugin.hasClass.call(this, className) ?
+        'removeClass' : 'addClass'].call(this, className);
+    };
+
+    plugin.getClassNames = function getClassNames() {
+      var element = this.raw || this, cn = element.className;
+      return cn.length
+        ? split.call(cn.replace(reEdgeSpaces, ' ').replace(reExtraSpaces, ' '), ' ')
+        : fuse.Array();
     };
 
     // prevent JScript bug with named function expressions
-    var addClassName = null,
-     getClassNames =   null,
-     hasClassName =    null,
-     removeClassName = null,
-     toggleClassName = null;
+    var addClass    = null,
+     hasClass       = null,
+     removeClass    = null,
+     toggleClass    = null,
+     getClassNames  = null;     
   })(HTMLElement.plugin);
 
   /*--------------------------------------------------------------------------*/
