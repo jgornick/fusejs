@@ -12,7 +12,7 @@
       ? { 'float': 'styleFloat', 'cssFloat': 'styleFloat' }
       : { 'float': 'cssFloat' },
 
-    NON_UNIT_NAMES = { 'fontWeight': 1, 'opacity': 1, 'zIndex': 1, 'zoom': 1 },
+    NON_UNIT_NAMES = { 'fontWeight': 1, 'lineHeight': 1, 'opacity': 1, 'zIndex': 1, 'zoom': 1 },
 
     POSITION_NAMES = { 'bottom': 1, 'left': 1, 'right': 1, 'top': 1 },
 
@@ -48,8 +48,7 @@
     },
 
     getValue = function(element, name, value) {
-      name = FLOAT_TRANSLATIONS[name] || name;
-      value || (value = element.style[name]);
+      value || (value = element.style[FLOAT_TRANSLATIONS[name] || name]);
       if (name == 'opacity') {
         return value == '1' ? '1.0' : parseFloat(value) || '0';
       }
@@ -105,7 +104,7 @@
 
         // do we need to append a unit to the value
         if (!NON_UNIT_NAMES[key] && !isNaN(+value)) {
-          value = value + (key === 'lineHeight' ? 'em' : 'px');
+          value = value + 'px';
         }
 
         elemStyle[FLOAT_TRANSLATIONS[key] || key] = value;
