@@ -25,6 +25,8 @@
       'TEXTAREA': 1
     },
 
+    NOOP = fuse.Function.NOOP,
+    
     Event = fuse.dom.Event,
 
     addDispatcher = Event._addDispatcher,
@@ -32,6 +34,8 @@
     addWatcher = NOOP,
 
     removeWatcher = NOOP,
+
+    createGetter = fuse._.createGetter,
 
     getFuseId = Node.getFuseId,
 
@@ -126,7 +130,7 @@
     };
 
     // DOM Level 2
-    if (envTest('ELEMENT_ADD_EVENT_LISTENER')) {
+    if (fuse.env.test('ELEMENT_ADD_EVENT_LISTENER')) {
       addWatcher = function(element, data) {
         element.addEventListener('focus', onCapture, true);
         (data || domData[getFuseId(element)])._isWatchingDelegation = true;
@@ -138,7 +142,7 @@
       };
     }
     // JScript
-    else if (envTest('ELEMENT_ATTACH_EVENT')) {
+    else if (fuse.env.test('ELEMENT_ATTACH_EVENT')) {
       PROBLEM_ELEMENTS.FORM =
       NON_BUBBLING_EVENTS.change =
       NON_BUBBLING_EVENTS.reset  =
@@ -192,7 +196,7 @@
        events  = data.events;
 
       if (!events) return this;
-      if (!isString(type)) type = null;
+      if (!fuse.Object.isString(type)) type = null;
 
       type = EVENT_TYPE_ALIAS[type] || type && String(type);
       selector && (selector = String(selector));
@@ -200,7 +204,7 @@
       // if the event type is omitted we stop
       // observing all delegatees on the element
       if (!type) {
-        eachKey(events, function(handlers, type) {
+        fuse.Object.each(events, function(handlers, type) {
           plugin.stopDelegating.call(element, type);
         });
         return this;
@@ -251,7 +255,7 @@
       }
 
       // detect if event data is empty
-      eachKey(events, function(handlers) {
+      fuse.Object.each(events, function(handlers) {
         if (handlers.length) return (isEmpty = false);
       });
 

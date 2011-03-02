@@ -3,12 +3,14 @@
   (function(plugin) {
 
     var CHECK_DIMENSION_IS_NULL =
-      envTest('ELEMENT_COMPUTED_STYLE_HEIGHT_IS_ZERO_WHEN_HIDDEN'),
+      fuse.env.test('ELEMENT_COMPUTED_STYLE_HEIGHT_IS_ZERO_WHEN_HIDDEN'),
 
     CHECK_POSITION_IS_NULL =
-      envTest('ELEMENT_COMPUTED_STYLE_DEFAULTS_TO_ZERO'),
+      fuse.env.test('ELEMENT_COMPUTED_STYLE_DEFAULTS_TO_ZERO'),
 
-    FLOAT_TRANSLATIONS = typeof fuse._docEl.style.styleFloat != 'undefined'
+    FLOAT_TRANSLATIONS =
+        typeof fuse._docEl.style.styleFloat != 'undefined' &&
+        typeof fuse._docEl.style.cssFloat   == 'undefined'
       ? { 'float': 'styleFloat', 'cssFloat': 'styleFloat' }
       : { 'float': 'cssFloat' },
 
@@ -32,7 +34,7 @@
       var cache = { },
       reHyphenated = /-([a-z])/gi,
       toUpperCase = function(match, letter) { return letter.toUpperCase(); },
-      replace = envTest('STRING_REPLACE_COERCE_FUNCTION_TO_STRING') ?
+      replace = fuse.env.test('STRING_REPLACE_COERCE_FUNCTION_TO_STRING') ?
         fuse.String.plugin.replace : ''.replace;
 
       return function(string) {
@@ -69,27 +71,19 @@
     plugin.setStyle = function setStyle(styles, value) {
       var hasOpacity, key, opacity, style, elemStyle = this.style;
 
-      if (isString(styles)) {
-        if (typeof value != 'undefined') {
-          style = styles; styles = {};
-          styles[style] = value;
-        } else {
-          // handle a css formatted string
-          if (reOpacity.test(styles)) {
-            plugin.setOpacity.call(this, styles.match(reOpacity)[1]);
-            styles = styles.replace(reOpacity, '');
-          }
-          // IE and Konqueror bug-out when setting overflow via cssText
-          if (reOverflow.test(styles)) {
-            elemStyle.overflow = styles.match(reOverflow)[1];
-            styles = styles.replace(reOverflow, '');
-          }
-          elemStyle.cssText += ';' + styles;
-          return this;
+      if (fuse.Object.isString(styles)) {
+        if (styles.indexOf('opacity:') > -1) {
+          plugin.setOpacity.call(this, styles.match(reOpacity)[1]);
+          styles = styles.replace(reOpacity, '');
+        }
+        // IE and Konqueror bug-out when setting overflow via cssText
+        if (styles.indexOf('overflow:') > -1) {
+          elemStyle.overflow = styles.match(reOverflow)[1];
+          styles = styles.replace(reOverflow, '');
         }
       }
 
-      if (isHash(styles)) {
+      if (fuse.Object.isHash(styles)) {
         styles = styles._object;
       }
 
@@ -118,14 +112,14 @@
 
 
     // fallback for browsers without computedStyle or currentStyle
-    if (!envTest('ELEMENT_COMPUTED_STYLE') && !envTest('ELEMENT_CURRENT_STYLE')) {
+    if (!fuse.env.test('ELEMENT_COMPUTED_STYLE') && !fuse.env.test('ELEMENT_CURRENT_STYLE')) {
       plugin.getStyle = function getStyle(name) {
         var result = getValue(this, camelize(name));
         return result === null ? result : fuse.String(result);
       };
     }
     // Opera 9.2x
-    else if (envTest('ELEMENT_COMPUTED_STYLE_DIMENSIONS_EQUAL_BORDER_BOX')) {
+    else if (fuse.env.test('ELEMENT_COMPUTED_STYLE_DIMENSIONS_EQUAL_BORDER_BOX')) {
       plugin.getStyle = function getStyle(name) {
         name = camelize(name);
         var dim, element = this.raw || this, result = null;
@@ -145,7 +139,7 @@
       };
     }
     // Firefox, Safari, Opera 9.5+
-    else if (envTest('ELEMENT_COMPUTED_STYLE')) {
+    else if (fuse.env.test('ELEMENT_COMPUTED_STYLE')) {
       plugin.getStyle = function getStyle(name) {
         name = camelize(name);
         var element = this.raw || this, result = null;
@@ -320,7 +314,7 @@
       return style && style[name];
     };
 
-    if (envTest('ELEMENT_COMPUTED_STYLE')) {
+    if (fuse.env.test('ELEMENT_COMPUTED_STYLE')) {
       getComputedStyle = function(element, name) {
         var style = element.ownerDocument.defaultView.getComputedStyle(element, null);
         return style && style[name];
@@ -378,7 +372,7 @@
         return fuse.Number(parseFloat(this.style[OPACITY_PROP]));
       };
 
-      if (envTest('ELEMENT_MS_CSS_FILTERS')) {
+      if (fuse.env.test('ELEMENT_MS_CSS_FILTERS')) {
         var reFilterOpacity = /alpha\(opacity=(.*)\)/;
         getOpacity = function getOpacity() {
           var element = this.raw || this,
@@ -391,7 +385,7 @@
           return fuse.Number(1);
         };
       }
-      else if (envTest('ELEMENT_COMPUTED_STYLE')) {
+      else if (fuse.env.test('ELEMENT_COMPUTED_STYLE')) {
         getOpacity = function getOpacity() {
           var element = this.raw || this,
            style = element.ownerDocument.defaultView.getComputedStyle(element, null);
@@ -409,15 +403,17 @@
        reSpaces   = /^\x20+$/;
 
       var setOpacity = function setOpacity(value) {
-        if (!isNaN(+value)) {
-          value = value > nearOne || reSpaces.test(value) ? 1 : value < nearZero ? 0 : +value;
+        if (value > nearOne) {
+          value = 1;
+        } if (value < nearZero && !fuse.Object.isString(value)) {
+          value = 0;
         }
 
         this.style[OPACITY_PROP] = value;
         return this;
       };
 
-      if (envTest('ELEMENT_MS_CSS_FILTERS')) {
+      if (fuse.env.test('ELEMENT_MS_CSS_FILTERS')) {
         setOpacity = function setOpacity(value) {
           // strip alpha from filter style
           var element = this.raw || this,
@@ -426,8 +422,10 @@
            filter     = currStyle.filter.replace(reAlpha, ''),
            zoom       = currStyle.zoom;
 
-          if (!isNaN(+value)) {
-            value = value > nearOne || reSpaces.test(value) ? 1 : value < nearZero ? 0 : +value;
+          if (value > nearOne || value == '' && fuse.Object.isString(value)) {
+            value = 1;
+          } if (value < nearZero) {
+            value = 0;
           }
 
           if (value === 1 || value === 'inherit') {
@@ -463,14 +461,14 @@
           !!(element.offsetHeight || element.offsetWidth);
       };
 
-      if (envTest('ELEMENT_COMPUTED_STYLE')) {
+      if (fuse.env.test('ELEMENT_COMPUTED_STYLE')) {
         isVisible = function isVisible() {
           var element = this.raw || this,
            compStyle = element.ownerDocument.defaultView.getComputedStyle(element, null);
           return !!(compStyle && (element.offsetHeight || element.offsetWidth));
         };
       }
-      if (envTest('TABLE_ELEMENTS_RETAIN_OFFSET_DIMENSIONS_WHEN_HIDDEN')) {
+      if (fuse.env.test('TABLE_ELEMENTS_RETAIN_OFFSET_DIMENSIONS_WHEN_HIDDEN')) {
         var __isVisible = isVisible;
         isVisible = function isVisible() {
           if (__isVisible.call(this)) {
@@ -544,7 +542,7 @@
         if (!options) {
           options = PRESETS.visual;
         }
-        else if (options && isString(options)) {
+        else if (options && fuse.Object.isString(options)) {
           if (STYLE_SUMS[options]) {
             isGettingSum = true;
           } else {

@@ -81,23 +81,23 @@
     })(fuse.Array.plugin.indexOf),
 
     defineIsClick = function() {
-      var object = this.raw ? plugin : this,
+      var p = fuse._, object = this.raw ? plugin : this,
 
       isLeftClick = function isLeftClick() {
         var event = this.raw;
-        return (this.isLeftClick = createGetter('isLeftClick',
+        return (this.isLeftClick = p.createGetter('isLeftClick',
           !!event && event[CLICK_PROP] == CLICK_MAP.L))();
       },
 
       isMiddleClick = function isMiddleClick() {
         var event = this.raw;
-        return (this.isMiddleClick = createGetter('isMiddleClick',
+        return (this.isMiddleClick = p.createGetter('isMiddleClick',
           !!event && event[CLICK_PROP] == CLICK_MAP.M))();
       },
 
       isRightClick = function isRightClick() {
         var event = this.raw;
-        return (this.isRightClick = createGetter('isRightClick',
+        return (this.isRightClick = p.createGetter('isRightClick',
           !!event && event[CLICK_PROP] == CLICK_MAP.R))();
       };
 
@@ -106,7 +106,7 @@
         if (typeof this.raw.metaKey == 'boolean') {
           isMiddleClick = function isMiddleClick() {
             var event = this.raw, which = event && event.which;
-            return (this.isMiddleClick = createGetter('isMiddleClick',
+            return (this.isMiddleClick = p.createGetter('isMiddleClick',
               which == CLICK_MAP.L ? event.metaKey : which == CLICK_MAP.M))();
           };
         }
@@ -120,9 +120,9 @@
       }
       // fallback
       else {
-        isLeftClick   = createGetter('isLeftClick',   false);
-        isMiddleClick = createGetter('isMiddleClick', false);
-        isRightClick  = createGetter('isRightClick',  false);
+        isLeftClick   = p.createGetter('isLeftClick',   false);
+        isMiddleClick = p.createGetter('isMiddleClick', false);
+        isRightClick  = p.createGetter('isRightClick',  false);
       }
 
       object.isLeftClick   = isLeftClick;
@@ -134,7 +134,7 @@
     },
 
     definePointerXY = function() {
-      var info = fuse._info,
+      var p = fuse._, info = fuse._info,
 
       currTarget = this.getCurrentTarget(),
 
@@ -145,19 +145,19 @@
 
       // defacto standard
       getPointerX = function getPointerX() {
-        return (this.getPointerX = createGetter('getPointerX',
+        return (this.getPointerX = p.createGetter('getPointerX',
           this.raw && this.raw.pageX || 0))();
       },
 
       getPointerY = function getPointerY() {
-        return (this.getPointerY = createGetter('getPointerY',
+        return (this.getPointerY = p.createGetter('getPointerY',
           this.raw && this.raw.pageY || 0))();
       };
 
       // fired events have no raw
       if (!this.raw) {
-        getPointerX = createGetter('getPointerX', 0);
-        getPointerY = createGetter('getPointerY', 0);
+        getPointerX = p.createGetter('getPointerX', 0);
+        getPointerY = p.createGetter('getPointerY', 0);
       }
       // IE and others
       if (typeof this.raw.pageX !== 'number') {
@@ -171,7 +171,7 @@
             x = this.raw.clientX + scrollEl.scrollLeft - root.clientLeft;
             if (x < 0) x = 0;
           }
-          this.getPointerX = createGetter('getPointerX', x);
+          this.getPointerX = p.createGetter('getPointerX', x);
           return x;
         };
 
@@ -185,7 +185,7 @@
             y = this.raw.clientY + scrollEl.scrollTop - root.clientTop;
             if (y < 0) y = 0;
           }
-          this.getPointerY = createGetter('getPointerY', y);
+          this.getPointerY = p.createGetter('getPointerY', y);
           return y;
         };
       }
@@ -255,7 +255,7 @@
           }
           // Fix a Safari bug where a text node gets passed as the target of an
           // anchor click rather than the anchor itself.
-          else if (node.nodeType == TEXT_NODE) {
+          else if (node.nodeType == 3) {
             node = node.parentNode;
           }
         }
@@ -283,9 +283,9 @@
 
     /*------------------------------------------------------------------------*/
 
-    if (!envTest('ELEMENT_ADD_EVENT_LISTENER')) {
+    if (!fuse.env.test('ELEMENT_ADD_EVENT_LISTENER')) {
       // JScript
-      if (envTest('ELEMENT_ATTACH_EVENT')) {
+      if (fuse.env.test('ELEMENT_ATTACH_EVENT')) {
         addObserver = function(element, type, handler) {
           element.attachEvent('on' + type, handler);
         };
@@ -319,8 +319,10 @@
     /*------------------------------------------------------------------------*/
 
     plugin.cancel = function cancel() {
-      var setCancelled = function(object) {
-        object.isCancelled = createGetter('isCancelled', true);
+      var p = fuse._,
+      
+      setCancelled = function(object) {
+        object.isCancelled = p.createGetter('isCancelled', true);
         return object;
       },
 
@@ -345,8 +347,10 @@
     };
 
     plugin.stopBubbling = function stopBubbling() {
-      var setBubbling = function(object) {
-        object.isBubbling = createGetter('isBubbling', false);
+      var p = fuse._,
+      
+      setBubbling = function(object) {
+        object.isBubbling = p.createGetter('isBubbling', false);
         return object;
       },
 
@@ -371,8 +375,10 @@
     };
 
     plugin.getTarget = function getTarget() {
-      var setTarget = function(object, value) {
-        object.getTarget = createGetter('getTarget', value);
+      var p = fuse._,
+      
+      setTarget = function(object, value) {
+        object.getTarget = p.createGetter('getTarget', value);
         return value;
       },
 
@@ -391,7 +397,7 @@
 
     plugin.getRelatedTarget = function getRelatedTarget() {
       var setRelatedTarget = function(object, value) {
-        object.getRelatedTarget = createGetter('getRelatedTarget', value);
+        object.getRelatedTarget = p.createGetter('getRelatedTarget', value);
         return value;
       },
 
@@ -448,7 +454,7 @@
           do {
             if (element == untilElement)
               break;
-            if (element.nodeType == ELEMENT_NODE && match(element, selectors))
+            if (element.nodeType == 1 && match(element, selectors))
               return fromElement(element);
           } while (element = element.parentNode);
         }
@@ -471,20 +477,20 @@
     plugin.stop = function stop() {
       // set so that a custom event can be inspected
       // after the fact to determine whether or not it was stopped.
-      this.isStopped = createGetter('isStopped', true);
+      this.isStopped = fuse._.createGetter('isStopped', true);
       this.cancel();
       this.stopBubbling();
       return this;
     };
 
-    plugin.isCancelled = createGetter('isCancelled', false);
-    plugin.isStopped   = createGetter('isStopped',   false);
-    plugin.isBubbling  = createGetter('isBubbling',  true);
+    plugin.isCancelled = fuse._.createGetter('isCancelled', false);
+    plugin.isStopped   = fuse._.createGetter('isStopped',   false);
+    plugin.isBubbling  = fuse._.createGetter('isBubbling',  true);
 
     /*------------------------------------------------------------------------*/
 
     HTMLDocument.plugin.isLoaded =
-      createGetter('isLoaded', false);
+      fuse._.createGetter('isLoaded', false);
 
     Window.plugin.fire =
     HTMLDocument.plugin.fire =
@@ -506,7 +512,7 @@
       }
 
       do {
-        id   = element.nodeType == ELEMENT_NODE ? element[DATA_ID_PROP] : getFuseId(element);
+        id   = element.nodeType == 1 ? element[DATA_ID_PROP] : getFuseId(element);
         data = id && domData[id];
         ec   = data && data.events && data.events[type];
 
@@ -533,7 +539,7 @@
               element.checked = checked;
             }
           }
-          else if (isHostType(element, type)) {
+          else if (fuse.Object.isHostType(element, type)) {
             // temporarily remove handler so its not triggered
             if (typeof element[attrName] == 'function') {
               backup = element[attrName];
@@ -611,17 +617,12 @@
 
       if (!events) return this;
 
-      if (!decorator.raw) {
-        data = domData[id] || {};
-        decorator = data.decorator || fuse(element);
-      }
-
-      type = isString(type) ? type && String(type) : null;
+      type = fuse.Object.isString(type) ? type && String(type) : null;
 
       // if the event type is omitted we stop
       // observing all handlers on the element
       if (!type) {
-        eachKey(events, function(handlers, type) {
+        fuse.Object.each(events, function(handlers, type) {
           stopObserving.call(element, type);
         });
         return this;
@@ -640,7 +641,7 @@
         return this;
       }
 
-      if (isNumber(handler)) {
+      if (fuse.Object.isNumber(handler)) {
         // bail if handler is a delegator
         foundAt = handler;
         handler = ec.handlers[foundAt];
@@ -648,7 +649,7 @@
           foundAt = -1;
         }
       } else {
-        foundAt = arrIndexOf.call(ec.handlers, handler);
+        foundAt = fuse._.arrIndexOf.call(ec.handlers, handler);
       }
 
       if (foundAt < 0) return this;
@@ -673,7 +674,6 @@
 
     // expose implied private methods
     Event._addDispatcher = addDispatcher;
-    Event._createGetter  = createGetter;
 
     // prevent JScript bug with named function expressions
     var cancel =        null,
