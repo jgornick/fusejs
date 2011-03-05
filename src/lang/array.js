@@ -1,5 +1,13 @@
   /*------------------------------ LANG: ARRAY -------------------------------*/
 
+  /**
+   * Represents a list of objects that can be accessed by index or other
+   * methods.  Provides methods to search, sort and manipulate arrays.
+   * 
+   * @class
+   * @name fuse.Array
+   */
+
   /* create shared pseudo private props */
 
   fuse._.sorter = function(left, right) {
@@ -8,11 +16,24 @@
   };
 
   /*--------------------------------------------------------------------------*/
-
+  
   (function(plugin) {
 
     /* create Array statics */
 
+    /**
+     * Convert an array-like object to a fuse.Array instance.
+     * 
+     * When no arguments are specified, an empty fuse.Array is returned.
+     * 
+     * @methodOf fuse.Array
+     * @static
+     * @name from
+     * 
+     * @param {ArrayLike} [iterable] The array-like object to convert from.
+     * 
+     * @returns {fuse.Array}
+     */
     function from(iterable) {
       var length, object, result, Array = from[ORIGIN].Array;
       if (!arguments.length) {
@@ -42,6 +63,17 @@
       return Array.fromArray([iterable]);
     }
 
+    /**
+     * Converts a fuse.dom.NodeList to fuse.Array.
+     * 
+     * @methodOf fuse.Array
+     * @static
+     * @name fromNodeList
+     * 
+     * @param {fuse.dom.NodeList} nodeList The node list to convert from.
+     * 
+     * @returns {fuse.Array}
+     */    
     function fromNodeList(nodeList) {
       var i = -1, result = fromNodeList[ORIGIN].Array();
       while (result[++i] = nodeList[i]) { }
@@ -50,6 +82,17 @@
 
     /*------------------------------------------------------------------------*/
 
+    /**
+     * Removes all elements from the array.
+     * 
+     * Please note that this method is destructive and will modify the array
+     * instance the method is called on.
+     * 
+     * @methodOf fuse.Array#
+     * @name clear
+     * 
+     * @returns {fuse.Array}
+     */
     function clear() {
       var object = Object(this), length = object.length >>> 0;
       if (!fuse.Object.isArray(object)) {
@@ -61,6 +104,16 @@
       return object;
     }
 
+    /**
+     * Returns a shallow clone of the array.
+     * 
+     * @methodOf fuse.Array#
+     * @name clone
+     * 
+     * @param {Boolean} deep Flag to perform a deep clone.
+     * 
+     * @returns {fuse.Array}
+     */
     function clone(deep) {
       var length, result, i = -1, object = Object(this),
        Array = clone[ORIGIN].Array;
@@ -79,6 +132,16 @@
       return result;
     }
 
+    /**
+     * Returns a new array with values that are not null or undefined.
+     * 
+     * @methodOf fuse.Array#
+     * @name compact
+     * 
+     * @param {Boolean} [falsy] Flag to remove values that are falsy.
+     * 
+     * @returns {fuse.Array}
+     */    
     function compact(falsy) {
       var i = -1, j = i, object = Object(this), length = object.length >>> 0,
        result = compact[ORIGIN].Array();
@@ -95,6 +158,14 @@
       return result;
     }
 
+    /**
+     * Returns a new flattened (one-dimensional) copy of the array.
+     * 
+     * @methodOf fuse.Array#
+     * @name flatten
+     * 
+     * @returns {fuse.Array}
+     */        
     function flatten() {
       var item, i = -1, j = i, object = Object(this),
        length = object.length >>> 0,
@@ -110,6 +181,17 @@
       return result;
     }
 
+    /**
+     * Inserts a value into the array at a specified index.
+     * 
+     * @methodOf fuse.Array#
+     * @name insert
+     * 
+     * @param {Number} index The index to insert the value at.
+     * @param {Object} value[, ...] Value or values to insert.
+     * 
+     * @returns {fuse.Array}
+     */   
     function insert(index, value) {
       var proto = window.Array.prototype,
        slice = proto.slice, splice = proto.splice,
@@ -125,6 +207,16 @@
       return object;
     }
 
+    /**
+     * Returns a new array with elements common to both arrays.
+     * 
+     * @methodOf fuse.Array#
+     * @name intersect
+     * 
+     * @param {fuse.Array} array Other array to intersect with.
+     * 
+     * @returns {fuse.Array}
+     */       
     function intersect(array) {
       var item, i = -1, j = i, Array = intersect[ORIGIN].Array,
        contains = Array.prototype.contains, object = Object(this),
@@ -140,6 +232,14 @@
       return result;
     }
 
+    /**
+     * Returns a new array with only unique elements.
+     * 
+     * @methodOf fuse.Array#
+     * @name unique
+     * 
+     * @returns {fuse.Array}
+     */    
     function unique() {
       var item, i = -1, j = i, object = Object(this),
        length = object.length >>> 0,
@@ -152,6 +252,17 @@
       return result;
     }
 
+    /**
+     * Returns a new array without the value(s) specified.
+     * 
+     * @methodOf fuse.Array#
+     * @name without
+     * 
+     * @param {Object} value[, ...] Value or values to remove from returned
+     *   array.
+     * 
+     * @returns {fuse.Array}
+     */      
     function without() {
       var args, i = -1, j = i, proto = window.Array.prototype,
        object = Object(this), length = object.length >>> 0,
@@ -171,7 +282,27 @@
 
     /* create ES5 method equivalents */
 
-    // ES5 15.4.4.16
+    /**
+     * Returns true if every element in the array satisfies the provided
+     * testing function.
+     * 
+     * This method does not use a strict comparison. If your callback function 
+     * returns a truthy value, the condition will pass. 
+     * 
+     * @methodOf fuse.Array#
+     * @name every
+     * 
+     * @param {Function} callback Function to test for each element.  The
+     *   callback is passed 3 arguments: current element, index of element and 
+     *   this array.
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @returns {Boolean}
+     * 
+     * @throws {TypeError} If callback isn't a function, TypeError is thrown.
+     * 
+     * @see ES5 15.4.4.16
+     */
     function every(callback, thisArg) {
       var i = -1, object = Object(this), length = object.length >>> 0;
       if (typeof callback != 'function') {
@@ -184,7 +315,27 @@
       return true;
     }
 
-    // ES5 15.4.4.20
+    /**
+     * Returns a new array with all elements that pass the test implemented by 
+     * the provided function.
+     * 
+     * This method does not use a strict comparison. If your callback function 
+     * returns a truthy value, the condition will pass. 
+     * 
+     * @methodOf fuse.Array#
+     * @name filter
+     * 
+     * @param {Function} callback Function to test each element of the array.  
+     *   The callback is passed 3 arguments: current element, index of element 
+     *   and this array.
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @returns {fuse.Array}
+     * 
+     * @throws {TypeError} If callback isn't a function, TypeError is thrown.
+     * 
+     * @see ES5 15.4.4.20
+     */    
     function filter(callback, thisArg) {
       var i = -1, j = i, object = Object(this), length = object.length >>> 0,
        result = filter[ORIGIN].Array();
@@ -199,7 +350,19 @@
       return result;
     }
 
-    // ES5 15.4.4.18
+    /**
+     * Calls a function for each element in the array.
+     * 
+     * @methodOf fuse.Array#
+     * @name forEach
+     * 
+     * @param {Function} callback Function to execute for each element.  The
+     *   callback is passed 3 arguments: current element, index of element and 
+     *   this array.
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @see ES5 15.4.4.18
+     */
     function forEach(callback, thisArg) {
       var i = -1, object = Object(this), length = object.length >>> 0;
       while (++i < length) {
@@ -207,7 +370,28 @@
       }
     }
 
-    // ES5 15.4.4.14
+    /**
+     * Returns the first index at which a given element can be found in the 
+     * array, or -1 if it is not present.
+     * 
+     * This method performs a strict comparison against the specified element.
+     * 
+     * @methodOf fuse.Array#
+     * @name indexOf
+     * 
+     * @param {Object} item Element to locate in the array.
+     * @param {Number} [fromIndex] The index at which to begin the search. 
+     *   Defaults to 0, i.e. the whole array will be searched. If the index is 
+     *   greater than or equal to the length of the array, -1 is returned, i.e. 
+     *   the array will not be searched. If negative, it is taken as the offset 
+     *   from the end of the array. Note that even when the index is negative, 
+     *   the array is still searched from front to back. If the calculated index 
+     *   is less than 0, the whole array will be searched.
+     * 
+     * @returns {fuse.Number}
+     * 
+     * @see ES5 15.4.4.14
+     */
     function indexOf(item, fromIndex) {
       var Number = indexOf[ORIGIN].Number,
        object = Object(this), length = object.length >>> 0;
@@ -224,7 +408,28 @@
       return Number(-1);
     }
 
-    // ES5 15.4.4.15
+    /**
+     * Returns the last index at which a given element can be found in the 
+     * array, or -1 if it is not present. The array is searched backwards, 
+     * starting at fromIndex.
+     * 
+     * @methodOf fuse.Array#
+     * @name lastIndexOf
+     * 
+     * @param {Object} item Element to locate in the array.
+     * @param {Number} [fromIndex] The index at which to start searching 
+     *   backwards. Defaults to the array's length, i.e. the whole array will be
+     *   searched. If the index is greater than or equal to the length of the 
+     *   array, the whole array will be searched. If negative, it is taken as 
+     *   the offset from the end of the array. Note that even when the index is 
+     *   negative, the array is still searched from back to front. If the 
+     *   calculated index is less than 0, -1 is returned, i.e. the array will 
+     *   not be searched.
+     * 
+     * @returns {fuse.Number}
+     * 
+     * @see ES5 15.4.4.15
+     */     
     function lastIndexOf(item, fromIndex) {
       var object = Object(this), length = object.length >>> 0;
       fromIndex = fromIndex == null ? length : fuse._.toInteger(fromIndex);
@@ -241,7 +446,24 @@
       return lastIndexOf[ORIGIN].Number(fromIndex);
     }
 
-    // ES5 15.4.4.19
+    /**
+     * Returns a new array with the results of calling a provided function on 
+     * every element in this array.
+     * 
+     * @methodOf fuse.Array#
+     * @name map
+     * 
+     * @param {Function} callback Function that produces an element for the new 
+     *   Array from an element of the current one.  The callback is passed 3 
+     *   arguments: current element, index of element and this array.
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @returns {fuse.Array}
+     * 
+     * @throws {TypeError} If callback isn't a function, TypeError is thrown.
+     * 
+     * @see ES5 15.4.4.19
+     */
     function map(callback, thisArg) {
       var i = -1, object = Object(this), length = object.length >>> 0,
        result = map[ORIGIN].Array();
@@ -255,7 +477,27 @@
       return result;
     }
 
-    // ES5 15.4.4.17
+    /**
+     * Tests whether some element in the array passes the test implemented by 
+     * the provided function.
+     * 
+     * This method does not use a strict comparison. If your callback function 
+     * returns a truthy value, the condition will pass. 
+     * 
+     * @methodOf fuse.Array#
+     * @name some
+     * 
+     * @param {Function} callback Function to test for each element.  The
+     *   callback is passed 3 arguments: current element, index of element and 
+     *   this array.
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @returns {Boolean}
+     * 
+     * @throws {TypeError} If callback isn't a function, TypeError is thrown.
+     * 
+     * @see ES5 15.4.4.17
+     */    
     function some(callback, thisArg) {
       var i = -1, object = Object(this), length = object.length >>> 0;
       if (typeof callback != 'function') {
@@ -272,11 +514,36 @@
 
     /* create optimized enumerable equivalents */
 
+    /**
+     * Enumerable mixin iteration helper.
+     * 
+     * @methodOf fuse.Array#
+     * @private
+     * @name _each
+     * 
+     * @param {Function} callback Function to execute for each element.
+     * 
+     * @returns {fuse.Array}
+     * 
+     * @see fuse.Array#forEach
+     */
     function _each(callback) {
       this.forEach(callback);
       return this;
     }
 
+    /**
+     * Tests whether an element is in the array.
+     * 
+     * This method uses a strict comparison against the value specified.
+     * 
+     * @methodOf fuse.Array#
+     * @name contains
+     * 
+     * @param {Object} value The object to locate in the list.
+     * 
+     * @returns {Boolean}
+     */  
     function contains(value) {
       var item, object = Object(this), length = object.length >>> 0;
       while (length--) {
@@ -290,6 +557,21 @@
       return false;
     }
 
+    /**
+     * Calls a function for each element in the array.
+     * 
+     * @methodOf fuse.Array#
+     * @name each
+     * 
+     * @param {Function} callback Function to execute for each element.  The
+     *   callback is passed 3 arguments: current element, index of element and 
+     *   this array.  If callback returns {Boolean} false, the loop will stop.
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @returns {fuse.Array}
+     * 
+     * @throws {TypeError} If callback isn't a function, TypeError is thrown. 
+     */      
     function each(callback, thisArg) {
       var i = -1, object = Object(this), length = object.length >>> 0;
       if (typeof callback != 'function') {
@@ -303,6 +585,25 @@
       return this;
     }
 
+    /**
+     * Returns the first element in the array by default or will return the 
+     * first element when a provided testing function passes.  First can also
+     * return the first n amount of elements by specifying a count as the first
+     * argument.
+     * 
+     * This method does not use a strict comparison. If your callback function 
+     * returns a truthy value, the condition will pass. 
+     * 
+     * @methodOf fuse.Array#
+     * @name first
+     * 
+     * @param {Function|Number} [callback] Function to test each element or a
+     *   count of first elements to return.  When a function, the callback is 
+     *   passed 2 arguments: current element and index of element.
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @returns {Object|fuse.Array} 
+     */        
     function first(callback, thisArg) {
       var count, i = -1, Array = first[ORIGIN].Array,
        object = Object(this), length = object.length >>> 0;
@@ -326,6 +627,24 @@
       }
     }
 
+    /**
+     * Incrementally builds a result value based on the successive results of 
+     * the callback.
+     * 
+     * @methodOf fuse.Array#
+     * @name inject
+     * 
+     * @param {Object} accumulator The initial value to which the callback
+     *   modifies.
+     * @param {Function} callback Function to modify the accumulator for each 
+     *   element.  The callback is passed 4 arguments: current accumulator
+     *   value, current element, index of element and this array.   
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @returns {Object} 
+     * 
+     * @throws {TypeError} If callback isn't a function, TypeError is thrown. 
+     */            
     function inject(accumulator, callback, thisArg) {
       var i = -1, object = Object(this), length = object.length >>> 0;
       if (typeof callback != 'function') {
@@ -339,6 +658,17 @@
       return accumulator;
     }
 
+    /**
+     * Returns a new array with elements modified by the specified method.
+     * 
+     * @methodOf fuse.Array#
+     * @name invoke
+     * 
+     * @param {String} method The method name to call on each element.
+     * @param {Object} [arg[, ...]] Arguments to pass to the specified method.
+     * 
+     * @returns {fuse.Array}
+     */    
     function invoke(method) {
       var args, result = invoke[ORIGIN].Array(),
        apply = invoke.apply, call = invoke.call,
@@ -359,6 +689,25 @@
       return result;
     }
 
+    /**
+     * Returns the last element in the array by default or will return the 
+     * last element when a provided testing function passes.  Last can also
+     * return the last n amount of elements by specifying a count as the first
+     * argument.
+     * 
+     * This method does not use a strict comparison. If your callback function 
+     * returns a truthy value, the condition will pass. 
+     * 
+     * @methodOf fuse.Array#
+     * @name last
+     * 
+     * @param {Function|Number} [callback] Function to test each element or a
+     *   count of last elements to return.  When a function, the callback is 
+     *   passed 2 arguments: current element and index of element.
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @returns {Object|fuse.Array} 
+     */   
     function last(callback, thisArg) {
       var result, count, Array = last[ORIGIN].Array,
        object = Object(this), length = object.length >>> 0;
@@ -381,6 +730,21 @@
       }
     }
 
+    /**
+     * Returns the maximum value in the array based on Math.max or a 
+     * greater-than (>) comparison.  A function may be specified to transform the
+     * element before the comparison is called.
+     * 
+     * @methodOf fuse.Array#
+     * @name max
+     * 
+     * @param {Function} [callback] Function to transform each element before
+     *   the comparison. The callback is passed 3 arguments: current element, 
+     *   index of element and this array.
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @returns {Object} Returns undefined when no elements are in the array.
+     */ 
     function max(callback, thisArg) {
       var result;
       if (!callback && (callback = fuse.Function.IDENTITY) && fuse.Object.isArray(this)) {
@@ -405,6 +769,21 @@
       return result;
     }
 
+    /**
+     * Returns the minimum value in the array based on Math.min or a 
+     * less-than (<) comparison.  A function may be specified to transform the
+     * element before the comparison is called.
+     * 
+     * @methodOf fuse.Array#
+     * @name min
+     * 
+     * @param {Function} [callback] Function to transform each element before
+     *   the comparison. The callback is passed 3 arguments: current element, 
+     *   index of element and this array.
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @returns {Object} Returns undefined when no elements are in the array.
+     */     
     function min(callback, thisArg) {
       var result;
       if (!callback && (callback = fuse.Function.IDENTITY) && fuse.Object.isArray(this)) {
@@ -427,6 +806,25 @@
       return result;
     }
 
+
+    /**
+     * Returns a new array that contains two elements.  The first element is a
+     * truthy array and the second is a falsy array.  A function may be
+     * specified to perform a custom test on each element.
+     * 
+     * This method does not use a strict comparison. If your callback function 
+     * returns a truthy value, the condition will pass. 
+     * 
+     * @methodOf fuse.Array#
+     * @name partition
+     * 
+     * @param {Function} [callback] Function to test each element. The callback 
+     *   is passed 3 arguments: current element, index of element 
+     *   and this array.
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @returns {fuse.Array} Returns [[true array], [false array]]
+     */        
     function partition(callback, thisArg) {
       var item, i = -1, j = i, k = i,  Array = partition[ORIGIN].Array,
        object = Object(this), length = object.length >>> 0,
@@ -445,6 +843,17 @@
       return Array(trues, falses);
     }
 
+    /**
+     * Returns a new array containing the values of the property specified for
+     * each element.
+     * 
+     * @methodOf fuse.Array#
+     * @name pluck
+     * 
+     * @param {String} property The property name used to capture values.
+     * 
+     * @returns {fuse.Array}
+     */     
     function pluck(property) {
       var i = -1, result = pluck[ORIGIN].Array(),
        object = Object(this), length = object.length >>> 0;
@@ -455,10 +864,32 @@
       return result;
     }
 
+    /**
+     * Returns the size of the array.
+     * 
+     * @methodOf fuse.Array#
+     * @name size
+     * 
+     * @returns {fuse.Number}
+     */
     function size() {
       return size[ORIGIN].Number(Object(this).length >>> 0);
     }
 
+    /**
+     * Returns a new array with the elements in the list sorted based on 
+     * the criteria computed for each element.
+     * 
+     * @methodOf fuse.Array#
+     * @name sortBy
+     * 
+     * @param {Function} [callback] Function to compute the criteria for each 
+     *   element. The callback is passed 3 arguments: current element, index of 
+     *   element and this array.
+     * @param {Object} [thisArg] Object to use as this when executing callback.
+     * 
+     * @returns {fuse.Array}
+     */
     function sortBy(callback, thisArg) {
       var value, i = -1,  array = [], object = Object(this),
        length = object.length >>> 0,
@@ -477,7 +908,20 @@
       }
       return result;
     }
-
+    
+    /**
+     * Returns a new array of tuples by combining two or more specified arrays.
+     * 
+     * @methodOf fuse.Array#
+     * @name zip
+     * 
+     * @param {Array} array[, ...] The array or arrays to zip with this array. 
+     * @param {Function} [callback] Function to transform the tuples once 
+     *   generated; this is always the last argument provided.  The callback is
+     *   passed 2 arguments: index of element and this array.
+     * 
+     * @returns {fuse.Array}
+     */
     function zip() {
       var lists, plucked, j, k, i = -1,
        origin   = zip[ORIGIN],
